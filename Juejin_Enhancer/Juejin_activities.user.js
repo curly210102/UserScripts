@@ -9,7 +9,6 @@
 // @license      MIT License
 // @grant        GM_xmlhttpRequest
 // @run-at       document-end
-// @require      /Users/curly/Workspace/opensource/UserScripts/Juejin_Enhancer/Juejin_activities.user.js
 // ==/UserScript==
 
 (function () {
@@ -34,7 +33,7 @@
     return;
   }
 
-  if (/^\/pins[\/$]/.test(document.location.pathname)) {
+  if (/^\/pins(?:\/|$)/.test(document.location.pathname)) {
     doUpdate(document);
   }
 
@@ -82,7 +81,9 @@
     const topicPanel = containerEl.querySelector(
       ".topicwrapper .new_topic_picker"
     );
-    if (!topicPanel) return;
+    if (!topicPanel) {
+      return;
+    }
 
     const observer = new MutationObserver(function (mutations) {
       mutations.forEach(({ type, addedNodes }) => {
@@ -106,7 +107,9 @@
     renderWholeContent(topicPanel.querySelector(".wrapper .contents"));
 
     function renderWholeContent(contentEl) {
-      if (!contentEl) return;
+      if (!contentEl) {
+        return;
+      }
       const allItemEls = contentEl.querySelectorAll(".item");
       allItemEls.forEach((itemEl) => {
         renderItem(itemEl);
