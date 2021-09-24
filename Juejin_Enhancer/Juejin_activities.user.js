@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.4
+// @version      0.1.5
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -24,8 +24,8 @@
   const endTimeStamp = 1633017600000;
   const blockTopics = [
     "树洞一下",
-    "掘金相亲",
-    "反馈建议",
+    "掘金相亲角",
+    "反馈 & 建议",
     "沸点福利",
     "掘金官方",
     "上班摸鱼",
@@ -56,14 +56,14 @@
   history.pushState = function () {
     _historyPushState.apply(history, arguments);
     initByRouter();
-  }
+  };
   history.replaceState = function () {
     _historyReplaceState.apply(history, arguments);
     initByRouter();
-  }
+  };
   window.addEventListener("popstate", function () {
     initByRouter();
-  })
+  });
 
   const componentBoxEl = document.querySelector(".global-component-box");
   if (componentBoxEl) {
@@ -96,7 +96,7 @@
     });
   }
 
-  function initByRouter () {
+  function initByRouter() {
     if (/^\/pins(?:\/|$)/.test(document.location.pathname)) {
       // initRewardProgress();
       doUpdate(document).then(() => {
@@ -108,13 +108,15 @@
         const wrapperEl = document.createElement("div");
         wrapperEl.dataset.tampermonkey = id;
         wrapperEl.appendChild(getRewardElement());
-        wrapperEl.style = "padding-top:20px;"
+        wrapperEl.style = "padding-top:20px;";
         containerEl.appendChild(wrapperEl);
       });
     }
-  
+
     if (
-      new RegExp(`^\\/user\\/${userId}(?:\\/|$)`).test(document.location.pathname)
+      new RegExp(`^\\/user\\/${userId}(?:\\/|$)`).test(
+        document.location.pathname
+      )
     ) {
       requestShortMsgTopic().then(() => {
         setTimeout(() => {
@@ -124,7 +126,7 @@
           const blockEl = document.createElement("div");
           blockEl.dataset.tampermonkey = id;
           blockEl.className = "block shadow";
-          blockEl.style = `margin-bottom: 1rem;background-color: #fff;border-radius: 2px;`
+          blockEl.style = `margin-bottom: 1rem;background-color: #fff;border-radius: 2px;`;
           const titleEl = document.createElement("div");
           titleEl.style = `padding: 1.333rem;
           font-size: 1.333rem;
@@ -134,7 +136,7 @@
           titleEl.textContent = "活动状态";
           blockEl.appendChild(titleEl);
           const contentEl = document.createElement("div");
-          contentEl.style = `padding: 1.333rem;`
+          contentEl.style = `padding: 1.333rem;`;
           contentEl.appendChild(getRewardElement());
           blockEl.appendChild(contentEl);
           siblingEl.after(blockEl);
@@ -207,15 +209,14 @@
       const isBlockedTopic = blockTopics.includes(title);
       const count = topicTitle2Count[title]?.count;
       const efficient = topicTitle2Count[title]?.efficient;
-      const isNoneEfficient = !efficient || isBlockedTopic;
       const iconEl = document.createElement("div");
       iconEl.dataset.tampermonkey = id;
-      if (count) {
+      if (count && !isBlockedTopic) {
         iconEl.style = `width: 18px;
             height: 18px;
             overflow: hidden;
             border-radius: 50%;
-            background-color: ${isNoneEfficient ? "#939aa3" : "#0fbf60"};
+            background-color: ${!efficient ? "#939aa3" : "#0fbf60"};
             color: #fff;
             font-size: 12px;
             text-align: center;
@@ -318,8 +319,12 @@
               } else {
                 const efficientTopics = new Set();
                 const title2Count = {};
+                const todayIndex = Math.floor(
+                  (new Date().valueOf() - startTimeStamp) / 86400000
+                );
+                let todayEfficientTopics = new Set();
                 let efficientDays = 0;
-                dailyTopics.forEach((topics) => {
+                dailyTopics.forEach((topics, index) => {
                   topics.map((title) => {
                     if (!title2Count[title]) {
                       title2Count[title] = 1;
@@ -327,17 +332,21 @@
                       title2Count[title]++;
                     }
                   });
-                  const dailyEfficientTopics = topics.filter((title) => {
-                    return !efficientTopics.has(title);
-                  });
-                  if (dailyEfficientTopics.length >= 3) {
-                    dailyEfficientTopics.forEach((title) => {
-                      efficientTopics.add(title);
-                    });
+                  const dailyEfficientTopics = new Set(
+                    topics.filter((title) => {
+                      return !efficientTopics.has(title);
+                    })
+                  );
+                  if (index === todayIndex) {
+                    todayEfficientTopics = dailyEfficientTopics;
+                  }
+                  if (dailyEfficientTopics.size >= 3) {
+                    dailyEfficientTopics.forEach(t => efficientTopics.add(t));
                     efficientDays++;
                   }
                 });
                 setStates({
+                  todayEfficientCount: todayEfficientTopics.size,
                   days: efficientDays,
                   topicStats: Object.fromEntries(
                     Object.entries(title2Count).map(([title, count]) => {
@@ -345,7 +354,7 @@
                         title,
                         {
                           count,
-                          efficient: efficientTopics.has(title),
+                          efficient: efficientTopics.has(title)
                         },
                       ];
                     })
@@ -378,7 +387,7 @@
   // }
 
   function getRewardElement() {
-    const { days, topicStats } = getStates();
+    const { todayEfficientCount, days, topicStats } = getStates();
     const reward = ["幸运奖", "三等奖", "二等奖", "一等奖", "全勤奖"][
       days >= 8 ? 4 : Math.floor((days - 1) / 2)
     ];
@@ -398,6 +407,7 @@
     rewardEl.innerHTML = `<h3 style="margin:0">破圈行动 <span style="float:right">9/23 - 9/30</span></h3>
     <p style="display:flex;flex-direction:row;justify-content: space-between;">
     ${descriptionHTML}
+    <p>📅 今天 ${todayEfficientCount} / 3</p>
     </p>
     `;
 
