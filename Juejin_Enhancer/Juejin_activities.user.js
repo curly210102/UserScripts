@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.1
+// @version      0.1.2
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -14,7 +14,6 @@
 // @supportURL   https://github.com/curly210102/UserScripts/issues
 // @updateURL    https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
 // @downloadURL  https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
-// @require      file:///Users/curly/Workspace/opensource/UserScripts/Juejin_Enhancer/Juejin_activities.user.js
 // ==/UserScript==
 
 // Activity: 9.23 - 9.30 "Break the circle"
