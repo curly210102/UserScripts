@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.3
+// @version      0.1.4
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -21,7 +21,7 @@
 (function () {
   const id = "juejin-activies-enhancer/break-the-circle";
   const startTimeStamp = 1632355200000;
-  const endTimeStamp = 1632441600000;
+  const endTimeStamp = 1633017600000;
   const blockTopics = [
     "树洞一下",
     "掘金相亲",
@@ -295,8 +295,9 @@
               for (const msg of data) {
                 const { topic, msg_Info } = msg;
                 // const topicId = topic.topic_id;
-                //   const createTime = msg_Info.ctime;
-                const auditTime = msg_Info.mtime * 1000;
+                // const createTime = msg_Info.ctime;
+                // 审核时间
+                const auditTime = msg_Info.rtime * 1000;
                 if (auditTime > startTimeStamp && auditTime < endTimeStamp) {
                   const day = Math.floor(
                     (auditTime - startTimeStamp) / 86400000
@@ -312,7 +313,7 @@
                 }
               }
 
-              if (lastAuditTime < startTimeStamp && has_more) {
+              if (lastAuditTime > startTimeStamp && has_more) {
                 resolve(requestShortMsgTopic(cursor, dailyTopics));
               } else {
                 const efficientTopics = new Set();
