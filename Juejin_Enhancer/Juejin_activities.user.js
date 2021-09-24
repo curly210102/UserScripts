@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.6
+// @version      0.1.6.1
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -297,8 +297,7 @@
                 const { topic, msg_Info } = msg;
                 // const topicId = topic.topic_id;
                 // const createTime = msg_Info.ctime;
-                // 审核时间
-                const auditTime = msg_Info.rtime * 1000;
+                const auditTime = msg_Info.mtime * 1000;
                 if (auditTime > startTimeStamp && auditTime < endTimeStamp && !blockTopics.includes(topic.title)) {
                   const day = Math.floor(
                     (auditTime - startTimeStamp) / 86400000
