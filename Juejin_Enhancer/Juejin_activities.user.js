@@ -1,9 +1,9 @@
 // ==UserScript==
-// @name         Juejin Activies Enhancer
+// @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
 // @version      0.1.1
-// @description  Enhances Juejin activies
+// @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
 // @license      MIT License
