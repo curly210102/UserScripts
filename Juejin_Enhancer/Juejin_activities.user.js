@@ -2,13 +2,16 @@
 // @name         Juejin Activies Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1
+// @version      0.1.1
 // @description  Enhances Juejin activies
 // @author       curly brackets
 // @match        https://juejin.cn/*
 // @license      MIT License
 // @grant        GM_xmlhttpRequest
 // @run-at       document-end
+// @supportURL   https://github.com/curly210102/UserScripts/issues
+// @updateURL    https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
+// @downloadURL  https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
 // ==/UserScript==
 
 (function () {
@@ -199,7 +202,7 @@
   }
 
   function requestShortMsgTopic(cursor = "0", topicMsgCount = {}) {
-    console.log("enter")
+    console.log("enter");
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
         method: "POST",
