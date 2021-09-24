@@ -104,7 +104,9 @@
         if (!containerEl) {
           return;
         }
+        containerEl.querySelector(`[data-tampermonkey='${id}']`)?.remove();
         const wrapperEl = document.createElement("div");
+        wrapperEl.dataset.tampermonkey = id;
         wrapperEl.appendChild(getRewardElement());
         wrapperEl.style = "padding-top:20px;"
         containerEl.appendChild(wrapperEl);
@@ -118,7 +120,9 @@
         setTimeout(() => {
           const siblingEl = document.querySelector(".user-view .stat-block");
           if (!siblingEl) return;
+          siblingEl.querySelector(`[data-tampermonkey='${id}']`)?.remove();
           const blockEl = document.createElement("div");
+          blockEl.dataset.tampermonkey = id;
           blockEl.className = "block shadow";
           blockEl.style = `margin-bottom: 1rem;background-color: #fff;border-radius: 2px;`
           const titleEl = document.createElement("div");
