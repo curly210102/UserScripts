@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.5
+// @version      0.1.6
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -122,7 +122,7 @@
         setTimeout(() => {
           const siblingEl = document.querySelector(".user-view .stat-block");
           if (!siblingEl) return;
-          siblingEl.querySelector(`[data-tampermonkey='${id}']`)?.remove();
+          siblingEl.parentElement.querySelector(`[data-tampermonkey='${id}']`)?.remove();
           const blockEl = document.createElement("div");
           blockEl.dataset.tampermonkey = id;
           blockEl.className = "block shadow";
@@ -299,7 +299,7 @@
                 // const createTime = msg_Info.ctime;
                 // 审核时间
                 const auditTime = msg_Info.rtime * 1000;
-                if (auditTime > startTimeStamp && auditTime < endTimeStamp) {
+                if (auditTime > startTimeStamp && auditTime < endTimeStamp && !blockTopics.includes(topic.title)) {
                   const day = Math.floor(
                     (auditTime - startTimeStamp) / 86400000
                   );
@@ -388,12 +388,13 @@
 
   function getRewardElement() {
     const { todayEfficientCount, days, topicStats } = getStates();
-    const reward = ["幸运奖", "三等奖", "二等奖", "一等奖", "全勤奖"][
-      days >= 8 ? 4 : Math.floor((days - 1) / 2)
-    ];
     const topicCount = Object.values(topicStats).filter(
       ({ efficient }) => !!efficient
     ).length;
+    const reward = ["幸运奖", "三等奖", "二等奖", "一等奖", "全勤奖"][
+      days >= 8 ? 4 : Math.floor((days - 1) / 2)
+    ] ?? (topicCount > 1 ? "幸运奖" : "无");
+    
     const descriptionHTML = [
       `🎯 达成 ${days} 天`,
       `⭕ ${topicCount} 个圈子`,
