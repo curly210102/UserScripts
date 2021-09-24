@@ -8,14 +8,18 @@
 // @match        https://juejin.cn/*
 // @license      MIT License
 // @grant        GM_xmlhttpRequest
+// @grant        GM_setValue
+// @grant        GM_getValue
 // @run-at       document-end
 // @supportURL   https://github.com/curly210102/UserScripts/issues
 // @updateURL    https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
 // @downloadURL  https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
+// @require      file:///Users/curly/Workspace/opensource/UserScripts/Juejin_Enhancer/Juejin_activities.user.js
 // ==/UserScript==
 
+// Activity: 9.23 - 9.30 "Break the circle"
 (function () {
-  // Activity: 9.23 - 9.30 "Break the circle"
+  const id = "juejin-activies-enhancer/break-the-circle";
   const startTimeStamp = 1632355200000;
   const endTimeStamp = 1632441600000;
   const blockTopics = [
@@ -27,6 +31,17 @@
     "上班摸鱼",
   ];
 
+  function getStates() {
+    return GM_getValue(`${id}/states`, {
+      days: 0,
+      topicStats: {},
+    });
+  }
+
+  function setStates(value) {
+    GM_setValue(`${id}/states`, value);
+  }
+
   const userProfileEl = document.querySelector(
     ".user-dropdown-list > .nav-menu-item-group:nth-child(2) > .nav-menu-item > a[href]"
   );
@@ -36,9 +51,19 @@
     return;
   }
 
-  if (/^\/pins(?:\/|$)/.test(document.location.pathname)) {
-    doUpdate(document);
+  const _historyPushState = history.pushState;
+  const _historyReplaceState = history.replaceState;
+  history.pushState = function () {
+    _historyPushState.apply(history, arguments);
+    initByRouter();
   }
+  history.replaceState = function () {
+    _historyReplaceState.apply(history, arguments);
+    initByRouter();
+  }
+  window.addEventListener("popstate", function () {
+    initByRouter();
+  })
 
   const componentBoxEl = document.querySelector(".global-component-box");
   if (componentBoxEl) {
@@ -71,16 +96,57 @@
     });
   }
 
+  function initByRouter () {
+    if (/^\/pins(?:\/|$)/.test(document.location.pathname)) {
+      // initRewardProgress();
+      doUpdate(document).then(() => {
+        const containerEl = document.querySelector(".main .userbox");
+        if (!containerEl) {
+          return;
+        }
+        const wrapperEl = document.createElement("div");
+        wrapperEl.appendChild(getRewardElement());
+        wrapperEl.style = "padding-top:20px;"
+        containerEl.appendChild(wrapperEl);
+      });
+    }
+  
+    if (
+      new RegExp(`^\\/user\\/${userId}(?:\\/|$)`).test(document.location.pathname)
+    ) {
+      requestShortMsgTopic().then(() => {
+        setTimeout(() => {
+          const siblingEl = document.querySelector(".user-view .stat-block");
+          if (!siblingEl) return;
+          const blockEl = document.createElement("div");
+          blockEl.className = "block shadow";
+          blockEl.style = `margin-bottom: 1rem;background-color: #fff;border-radius: 2px;`
+          const titleEl = document.createElement("div");
+          titleEl.style = `padding: 1.333rem;
+          font-size: 1.333rem;
+          font-weight: 600;
+          color: #31445b;
+          border-bottom: 1px solid rgba(230,230,231,.5);`;
+          titleEl.textContent = "活动状态";
+          blockEl.appendChild(titleEl);
+          const contentEl = document.createElement("div");
+          contentEl.style = `padding: 1.333rem;`
+          contentEl.appendChild(getRewardElement());
+          blockEl.appendChild(contentEl);
+          siblingEl.after(blockEl);
+        }, 1000);
+      });
+    }
+  }
+
   function doUpdate(containerEl) {
-    requestShortMsgTopic().then((topicMsgCount) => {
-      const topicTitle2Count = Object.fromEntries(
-        Object.values(topicMsgCount).map(({ count, title }) => [title, count])
-      );
-      renderTopicStatus(topicTitle2Count, containerEl);
+    return requestShortMsgTopic().then(() => {
+      renderTopicStatus(containerEl);
     });
   }
 
-  function renderTopicStatus(topicTitle2Count, containerEl) {
+  function renderTopicStatus(containerEl) {
+    const topicTitle2Count = getStates()["topicStats"];
     const topicPanel = containerEl.querySelector(
       ".topicwrapper .new_topic_picker"
     );
@@ -131,21 +197,21 @@
           !itemEl.parentElement?.classList.contains("searchlist"))
       )
         return;
-      itemEl
-        .querySelector("[data-tampermonkey='juejin-activies-enhancer']")
-        ?.remove();
+      itemEl.querySelector(`[data-tampermonkey='${id}']`)?.remove();
       const title = itemEl.querySelector(".content_main > .title")?.textContent;
 
       const isBlockedTopic = blockTopics.includes(title);
-      const count = topicTitle2Count[title];
+      const count = topicTitle2Count[title]?.count;
+      const efficient = topicTitle2Count[title]?.efficient;
+      const isNoneEfficient = !efficient || isBlockedTopic;
       const iconEl = document.createElement("div");
-      iconEl.dataset.tampermonkey = "juejin-activies-enhancer";
+      iconEl.dataset.tampermonkey = id;
       if (count) {
         iconEl.style = `width: 18px;
             height: 18px;
             overflow: hidden;
             border-radius: 50%;
-            background-color: ${isBlockedTopic ? "#939aa3" : "#0fbf60"};
+            background-color: ${isNoneEfficient ? "#939aa3" : "#0fbf60"};
             color: #fff;
             font-size: 12px;
             text-align: center;
@@ -201,8 +267,7 @@
     }
   }
 
-  function requestShortMsgTopic(cursor = "0", topicMsgCount = {}) {
-    console.log("enter");
+  function requestShortMsgTopic(cursor = "0", dailyTopics = []) {
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
         method: "POST",
@@ -225,18 +290,17 @@
               let lastAuditTime = Infinity;
               for (const msg of data) {
                 const { topic, msg_Info } = msg;
-                const topicId = topic.topic_id;
+                // const topicId = topic.topic_id;
                 //   const createTime = msg_Info.ctime;
                 const auditTime = msg_Info.mtime * 1000;
                 if (auditTime > startTimeStamp && auditTime < endTimeStamp) {
-                  if (topicId in topicMsgCount) {
-                    topicMsgCount[topicId]["count"]++;
-                  } else {
-                    topicMsgCount[topicId] = {
-                      count: 1,
-                      title: topic.title,
-                    };
+                  const day = Math.floor(
+                    (auditTime - startTimeStamp) / 86400000
+                  );
+                  if (!dailyTopics[day]) {
+                    dailyTopics[day] = [];
                   }
+                  dailyTopics[day].push(topic.title);
                 }
                 lastAuditTime = auditTime;
                 if (auditTime < startTimeStamp) {
@@ -245,9 +309,44 @@
               }
 
               if (lastAuditTime < startTimeStamp && has_more) {
-                resolve(requestShortMsgTopic(cursor, topicMsgCount));
+                resolve(requestShortMsgTopic(cursor, dailyTopics));
               } else {
-                resolve(topicMsgCount);
+                const efficientTopics = new Set();
+                const title2Count = {};
+                let efficientDays = 0;
+                dailyTopics.forEach((topics) => {
+                  topics.map((title) => {
+                    if (!title2Count[title]) {
+                      title2Count[title] = 1;
+                    } else {
+                      title2Count[title]++;
+                    }
+                  });
+                  const dailyEfficientTopics = topics.filter((title) => {
+                    return !efficientTopics.has(title);
+                  });
+                  if (dailyEfficientTopics.length >= 3) {
+                    dailyEfficientTopics.forEach((title) => {
+                      efficientTopics.add(title);
+                    });
+                    efficientDays++;
+                  }
+                });
+                setStates({
+                  days: efficientDays,
+                  topicStats: Object.fromEntries(
+                    Object.entries(title2Count).map(([title, count]) => {
+                      return [
+                        title,
+                        {
+                          count,
+                          efficient: efficientTopics.has(title),
+                        },
+                      ];
+                    })
+                  ),
+                });
+                resolve();
               }
             }
           } catch (err) {
@@ -257,5 +356,46 @@
         },
       });
     });
+  }
+
+  // function initRewardProgress() {
+  //   const listenId = GM_addValueChangeListener(
+  //     `${id}/states`,
+  //     function (name, old_value, new_value) {
+  //       if (old_value !== new_value) {
+  //         getRewardElement();
+  //       }
+  //     }
+  //   );
+  //   window.addEventListener("beforeunload", function () {
+  //     GM_removeValueChangeListener(listenId);
+  //   });
+  // }
+
+  function getRewardElement() {
+    const { days, topicStats } = getStates();
+    const reward = ["幸运奖", "三等奖", "二等奖", "一等奖", "全勤奖"][
+      days >= 8 ? 4 : Math.floor((days - 1) / 2)
+    ];
+    const topicCount = Object.values(topicStats).filter(
+      ({ efficient }) => !!efficient
+    ).length;
+    const descriptionHTML = [
+      `🎯 达成 ${days} 天`,
+      `⭕ ${topicCount} 个圈子`,
+      `🏆 ${reward}`,
+    ]
+      .map(
+        (text) => `<span style="color:#939aa3;font-weight:bold">${text}</span>`
+      )
+      .join("");
+    const rewardEl = document.createElement("div");
+    rewardEl.innerHTML = `<h3 style="margin:0">破圈行动 <span style="float:right">9/23 - 9/30</span></h3>
+    <p style="display:flex;flex-direction:row;justify-content: space-between;">
+    ${descriptionHTML}
+    </p>
+    `;
+
+    return rewardEl;
   }
 })();
