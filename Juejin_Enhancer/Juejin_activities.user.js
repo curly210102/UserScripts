@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.6.1
+// @version      0.1.6.2
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -122,7 +122,9 @@
         setTimeout(() => {
           const siblingEl = document.querySelector(".user-view .stat-block");
           if (!siblingEl) return;
-          siblingEl.parentElement.querySelector(`[data-tampermonkey='${id}']`)?.remove();
+          siblingEl.parentElement
+            .querySelector(`[data-tampermonkey='${id}']`)
+            ?.remove();
           const blockEl = document.createElement("div");
           blockEl.dataset.tampermonkey = id;
           blockEl.className = "block shadow";
@@ -292,28 +294,38 @@
             if (status === 200) {
               const responseData = JSON.parse(response);
               const { data, cursor, has_more } = responseData;
-              let lastAuditTime = Infinity;
+              let lastPublishTime = Infinity;
               for (const msg of data) {
                 const { topic, msg_Info } = msg;
                 // const topicId = topic.topic_id;
                 // const createTime = msg_Info.ctime;
-                const auditTime = msg_Info.mtime * 1000;
-                if (auditTime > startTimeStamp && auditTime < endTimeStamp && !blockTopics.includes(topic.title)) {
+                const publishTime = msg_Info.ctime * 1000;
+                if (
+                  publishTime > startTimeStamp &&
+                  publishTime < endTimeStamp &&
+                  !blockTopics.includes(topic.title)
+                ) {
                   const day = Math.floor(
-                    (auditTime - startTimeStamp) / 86400000
+                    (publishTime - startTimeStamp) / 86400000
                   );
                   if (!dailyTopics[day]) {
                     dailyTopics[day] = [];
                   }
-                  dailyTopics[day].push(topic.title);
+                  console.log(msg_Info.audit_status, msg_Info.verify_status);
+                  dailyTopics[day].push({
+                    title: topic.title,
+                    verified:
+                      msg_Info.audit_status === 2 &&
+                      msg_Info.verify_status === 1,
+                  });
                 }
-                lastAuditTime = auditTime;
-                if (auditTime < startTimeStamp) {
+                lastPublishTime = publishTime;
+                if (publishTime < startTimeStamp) {
                   break;
                 }
               }
 
-              if (lastAuditTime > startTimeStamp && has_more) {
+              if (lastPublishTime > startTimeStamp && has_more) {
                 resolve(requestShortMsgTopic(cursor, dailyTopics));
               } else {
                 const efficientTopics = new Set();
@@ -324,7 +336,7 @@
                 let todayEfficientTopics = new Set();
                 let efficientDays = 0;
                 dailyTopics.forEach((topics, index) => {
-                  topics.map((title) => {
+                  topics.map(({ title }) => {
                     if (!title2Count[title]) {
                       title2Count[title] = 1;
                     } else {
@@ -332,15 +344,17 @@
                     }
                   });
                   const dailyEfficientTopics = new Set(
-                    topics.filter((title) => {
-                      return !efficientTopics.has(title);
-                    })
+                    topics
+                      .filter(({ title, verified }) => {
+                        return !efficientTopics.has(title) && verified;
+                      })
+                      .map(({ title }) => title)
                   );
                   if (index === todayIndex) {
                     todayEfficientTopics = dailyEfficientTopics;
                   }
                   if (dailyEfficientTopics.size >= 3) {
-                    dailyEfficientTopics.forEach(t => efficientTopics.add(t));
+                    dailyEfficientTopics.forEach((t) => efficientTopics.add(t));
                     efficientDays++;
                   }
                 });
@@ -353,7 +367,7 @@
                         title,
                         {
                           count,
-                          efficient: efficientTopics.has(title)
+                          efficient: efficientTopics.has(title),
                         },
                       ];
                     })
@@ -390,10 +404,11 @@
     const topicCount = Object.values(topicStats).filter(
       ({ efficient }) => !!efficient
     ).length;
-    const reward = ["幸运奖", "三等奖", "二等奖", "一等奖", "全勤奖"][
-      days >= 8 ? 4 : Math.floor((days - 1) / 2)
-    ] ?? (topicCount > 1 ? "幸运奖" : "无");
-    
+    const reward =
+      ["幸运奖", "三等奖", "二等奖", "一等奖", "全勤奖"][
+        days >= 8 ? 4 : Math.floor((days - 1) / 2)
+      ] ?? (topicCount > 1 ? "幸运奖" : "无");
+
     const descriptionHTML = [
       `🎯 达成 ${days} 天`,
       `⭕ ${topicCount} 个圈子`,
