@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.6.2
+// @version      0.1.6.3
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -20,7 +20,7 @@
 // Activity: 9.23 - 9.30 "Break the circle"
 (function () {
   const id = "juejin-activies-enhancer/break-the-circle";
-  const startTimeStamp = 1632355200000;
+  const startTimeStamp = 1632326400000;
   const endTimeStamp = 1633017600000;
   const blockTopics = [
     "树洞一下",
@@ -311,7 +311,6 @@
                   if (!dailyTopics[day]) {
                     dailyTopics[day] = [];
                   }
-                  console.log(msg_Info.audit_status, msg_Info.verify_status);
                   dailyTopics[day].push({
                     title: topic.title,
                     verified:
@@ -359,7 +358,7 @@
                   }
                 });
                 setStates({
-                  todayEfficientCount: todayEfficientTopics.size,
+                  todayEfficientTopics: [...todayEfficientTopics],
                   days: efficientDays,
                   topicStats: Object.fromEntries(
                     Object.entries(title2Count).map(([title, count]) => {
@@ -400,7 +399,7 @@
   // }
 
   function getRewardElement() {
-    const { todayEfficientCount, days, topicStats } = getStates();
+    const { todayEfficientTopics, days, topicStats } = getStates();
     const topicCount = Object.values(topicStats).filter(
       ({ efficient }) => !!efficient
     ).length;
@@ -418,12 +417,27 @@
         (text) => `<span style="color:#939aa3;font-weight:bold">${text}</span>`
       )
       .join("");
+    const todayTopicsHTML = todayEfficientTopics
+      .map(
+        (title) => `<span style="display: inline-block;
+    padding:2px 10px;
+    background-color:#eaf2ff;
+    font-size:12px;
+    line-height:20px;
+    color:#1e80ff;
+    border-radius:50px;
+    margin-left:2px;margin-bottom:2px;">${title}</span>`
+      )
+      .join("");
     const rewardEl = document.createElement("div");
     rewardEl.innerHTML = `<h3 style="margin:0">破圈行动 <span style="float:right">9/23 - 9/30</span></h3>
     <p style="display:flex;flex-direction:row;justify-content: space-between;">
     ${descriptionHTML}
-    <p>📅 今天 ${todayEfficientCount} / 3</p>
     </p>
+    <p>📅 今天 ${todayEfficientTopics.length} / 3</p>
+    <div>
+    ${todayTopicsHTML}
+    </div>
     `;
 
     return rewardEl;
