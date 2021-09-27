@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.6.3
+// @version      0.1.6.4
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -30,6 +30,7 @@
     "掘金官方",
     "上班摸鱼",
   ];
+  let currentRouterPathname = "";
 
   function getStates() {
     return GM_getValue(`${id}/states`, {
@@ -97,7 +98,12 @@
   }
 
   function initByRouter() {
-    if (/^\/pins(?:\/|$)/.test(document.location.pathname)) {
+    const prevRouterPathname = currentRouterPathname;
+    currentRouterPathname = document.location.pathname;
+    const pagePinsRegexp = /^\/pins(?:\/|$)/;
+    const pageProfileRegexp = new RegExp(`^\\/user\\/${userId}(?:\\/|$)`);
+    if (pagePinsRegexp.test(currentRouterPathname) && !pagePinsRegexp.test(prevRouterPathname)) {
+      console.log("enter");
       // initRewardProgress();
       doUpdate(document).then(() => {
         const containerEl = document.querySelector(".main .userbox");
@@ -112,13 +118,13 @@
         containerEl.appendChild(wrapperEl);
       });
     }
-
-    if (
-      new RegExp(`^\\/user\\/${userId}(?:\\/|$)`).test(
-        document.location.pathname
-      )
+    else if (
+      pageProfileRegexp.test(
+        currentRouterPathname
+      ) && !pageProfileRegexp.test(prevRouterPathname)
     ) {
-      requestShortMsgTopic().then(() => {
+      console.log("enter");
+      fetchAndUpdateGlobalStates().then(() => {
         setTimeout(() => {
           const siblingEl = document.querySelector(".user-view .stat-block");
           if (!siblingEl) return;
@@ -148,13 +154,13 @@
   }
 
   function doUpdate(containerEl) {
-    return requestShortMsgTopic().then(() => {
-      renderTopicStatus(containerEl);
+    return fetchAndUpdateGlobalStates().then(() => {
+      renderTopicSelectMenu(containerEl);
     });
   }
 
-  function renderTopicStatus(containerEl) {
-    const topicTitle2Count = getStates()["topicStats"];
+  function renderTopicSelectMenu(containerEl) {
+    const { efficientTopics } = getStates();
     const topicPanel = containerEl.querySelector(
       ".topicwrapper .new_topic_picker"
     );
@@ -168,9 +174,9 @@
           addedNodes.forEach((itemEl) => {
             if (!itemEl) return;
             else if (itemEl?.classList?.contains("contents")) {
-              renderWholeContent(itemEl, topicTitle2Count);
+              renderWholeContent(itemEl);
             } else {
-              renderItem(itemEl, topicTitle2Count);
+              renderItem(itemEl);
             }
           });
         }
@@ -209,16 +215,16 @@
       const title = itemEl.querySelector(".content_main > .title")?.textContent;
 
       const isBlockedTopic = blockTopics.includes(title);
-      const count = topicTitle2Count[title]?.count;
-      const efficient = topicTitle2Count[title]?.efficient;
+      const count = efficientTopics[title]?.count;
+      const verified = efficientTopics[title]?.verified;
       const iconEl = document.createElement("div");
       iconEl.dataset.tampermonkey = id;
-      if (count && !isBlockedTopic) {
+      if (count) {
         iconEl.style = `width: 18px;
             height: 18px;
             overflow: hidden;
             border-radius: 50%;
-            background-color: ${!efficient ? "#939aa3" : "#0fbf60"};
+            background-color: ${!verified ? "#939aa3" : "#0fbf60"};
             color: #fff;
             font-size: 12px;
             text-align: center;
@@ -274,6 +280,11 @@
     }
   }
 
+  async function fetchAndUpdateGlobalStates() {
+    const dailyTopics = await requestShortMsgTopic();
+    updateGlobalStates(dailyTopics);
+  }
+
   function requestShortMsgTopic(cursor = "0", dailyTopics = []) {
     return new Promise((resolve, reject) => {
       GM_xmlhttpRequest({
@@ -313,9 +324,15 @@
                   }
                   dailyTopics[day].push({
                     title: topic.title,
+                    // wait: 0, pass: 1, fail: 2
                     verified:
-                      msg_Info.audit_status === 2 &&
-                      msg_Info.verify_status === 1,
+                      msg_Info.status === 1 ||
+                      msg_Info.verify_status === 0
+                        ? 0
+                        : msg_Info.status === 2 &&
+                          msg_Info.verify_status === 1
+                        ? 1
+                        : 2,
                   });
                 }
                 lastPublishTime = publishTime;
@@ -327,52 +344,7 @@
               if (lastPublishTime > startTimeStamp && has_more) {
                 resolve(requestShortMsgTopic(cursor, dailyTopics));
               } else {
-                const efficientTopics = new Set();
-                const title2Count = {};
-                const todayIndex = Math.floor(
-                  (new Date().valueOf() - startTimeStamp) / 86400000
-                );
-                let todayEfficientTopics = new Set();
-                let efficientDays = 0;
-                dailyTopics.forEach((topics, index) => {
-                  topics.map(({ title }) => {
-                    if (!title2Count[title]) {
-                      title2Count[title] = 1;
-                    } else {
-                      title2Count[title]++;
-                    }
-                  });
-                  const dailyEfficientTopics = new Set(
-                    topics
-                      .filter(({ title, verified }) => {
-                        return !efficientTopics.has(title) && verified;
-                      })
-                      .map(({ title }) => title)
-                  );
-                  if (index === todayIndex) {
-                    todayEfficientTopics = dailyEfficientTopics;
-                  }
-                  if (dailyEfficientTopics.size >= 3) {
-                    dailyEfficientTopics.forEach((t) => efficientTopics.add(t));
-                    efficientDays++;
-                  }
-                });
-                setStates({
-                  todayEfficientTopics: [...todayEfficientTopics],
-                  days: efficientDays,
-                  topicStats: Object.fromEntries(
-                    Object.entries(title2Count).map(([title, count]) => {
-                      return [
-                        title,
-                        {
-                          count,
-                          efficient: efficientTopics.has(title),
-                        },
-                      ];
-                    })
-                  ),
-                });
-                resolve();
+                resolve(dailyTopics);
               }
             }
           } catch (err) {
@@ -384,32 +356,72 @@
     });
   }
 
-  // function initRewardProgress() {
-  //   const listenId = GM_addValueChangeListener(
-  //     `${id}/states`,
-  //     function (name, old_value, new_value) {
-  //       if (old_value !== new_value) {
-  //         getRewardElement();
-  //       }
-  //     }
-  //   );
-  //   window.addEventListener("beforeunload", function () {
-  //     GM_removeValueChangeListener(listenId);
-  //   });
-  // }
+  function updateGlobalStates(dailyTopics) {
+    const allEfficientTopicTitles = new Set();
+    const topicCountAndVerified = {};
+    const todayIndex = Math.floor(
+      (new Date().valueOf() - startTimeStamp) / 86400000
+    );
+    const todayEfficientTopicTitles = [];
+    let efficientDays = 0;
+    dailyTopics.forEach((topics, index) => {
+      // 获取一天破解的圈子
+      const dailyEfficientTopicTitles = new Set(
+        topics
+          .filter(({ title, verified }) => {
+            // 破圈：未被破解 + 已通过审核或正在等待审核
+            return !allEfficientTopicTitles.has(title) && verified !== 2;
+          })
+          .map(({ title }) => title)
+      );
+      // 更新达标天数
+      if (dailyEfficientTopicTitles.size >= 3) {
+        efficientDays++;
+      }
+      // 记录今日破圈数据
+      if (index === todayIndex) {
+        todayEfficientTopicTitles.push(...dailyEfficientTopicTitles);
+      }
+      // 更新已破圈集合
+      dailyEfficientTopicTitles.forEach((t) => allEfficientTopicTitles.add(t));
+      // 记录已破圈发帖数
+      topics.map(({ title, verified }) => {
+        if (!topicCountAndVerified[title]) {
+          topicCountAndVerified[title] = {
+            count: 1,
+            verified,
+          };
+        } else {
+          topicCountAndVerified[title]["count"]++;
+          topicCountAndVerified[title]["verified"] ||= (verified === 1);
+        }
+      });
+    });
+
+    setStates({
+      todayEfficientTopicTitles,
+      efficientDays,
+      efficientTopics: Object.fromEntries(
+        [...allEfficientTopicTitles].map((title) => {
+          return [title, topicCountAndVerified[title]];
+        })
+      ),
+    });
+  }
 
   function getRewardElement() {
-    const { todayEfficientTopics, days, topicStats } = getStates();
-    const topicCount = Object.values(topicStats).filter(
-      ({ efficient }) => !!efficient
+    const { efficientTopics, efficientDays, todayEfficientTopicTitles } =
+      getStates();
+    const topicCount = Object.values(efficientTopics).filter(
+      ({ verified }) => !!verified
     ).length;
     const reward =
       ["幸运奖", "三等奖", "二等奖", "一等奖", "全勤奖"][
-        days >= 8 ? 4 : Math.floor((days - 1) / 2)
+        efficientDays >= 8 ? 4 : Math.floor((efficientDays - 1) / 2)
       ] ?? (topicCount > 1 ? "幸运奖" : "无");
 
     const descriptionHTML = [
-      `🎯 达成 ${days} 天`,
+      `🎯 达成 ${efficientDays} 天`,
       `⭕ ${topicCount} 个圈子`,
       `🏆 ${reward}`,
     ]
@@ -417,24 +429,25 @@
         (text) => `<span style="color:#939aa3;font-weight:bold">${text}</span>`
       )
       .join("");
-    const todayTopicsHTML = todayEfficientTopics
-      .map(
-        (title) => `<span style="display: inline-block;
-    padding:2px 10px;
-    background-color:#eaf2ff;
-    font-size:12px;
-    line-height:20px;
-    color:#1e80ff;
-    border-radius:50px;
-    margin-left:2px;margin-bottom:2px;">${title}</span>`
-      )
+    const todayTopicsHTML = todayEfficientTopicTitles
+      .map((title) => {
+        const isVerified = efficientTopics[title]?.verified;
+        return `<span style="display: inline-block;
+          padding:2px 10px;
+          background-color: ${isVerified ? "#eaf2ff" : "#c2c6cc"};
+          color:${isVerified ? "#1e80ff" : "#393a3c"};
+          font-size:12px;
+          line-height:20px;
+          border-radius:50px;
+          margin-left:2px;margin-bottom:2px;">${title}</span>`;
+      })
       .join("");
     const rewardEl = document.createElement("div");
     rewardEl.innerHTML = `<h3 style="margin:0">破圈行动 <span style="float:right">9/23 - 9/30</span></h3>
     <p style="display:flex;flex-direction:row;justify-content: space-between;">
     ${descriptionHTML}
     </p>
-    <p>📅 今天 ${todayEfficientTopics.length} / 3</p>
+    <p>📅 今天 ${todayEfficientTopicTitles.length} / 3</p>
     <div>
     ${todayTopicsHTML}
     </div>
