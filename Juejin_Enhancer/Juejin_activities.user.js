@@ -103,7 +103,6 @@
     const pagePinsRegexp = /^\/pins(?:\/|$)/;
     const pageProfileRegexp = new RegExp(`^\\/user\\/${userId}(?:\\/|$)`);
     if (pagePinsRegexp.test(currentRouterPathname) && !pagePinsRegexp.test(prevRouterPathname)) {
-      console.log("enter");
       // initRewardProgress();
       doUpdate(document).then(() => {
         const containerEl = document.querySelector(".main .userbox");
@@ -123,7 +122,6 @@
         currentRouterPathname
       ) && !pageProfileRegexp.test(prevRouterPathname)
     ) {
-      console.log("enter");
       fetchAndUpdateGlobalStates().then(() => {
         setTimeout(() => {
           const siblingEl = document.querySelector(".user-view .stat-block");
