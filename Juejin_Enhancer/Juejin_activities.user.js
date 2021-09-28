@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.6.4
+// @version      0.1.6.5
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -306,8 +306,6 @@
               let lastPublishTime = Infinity;
               for (const msg of data) {
                 const { topic, msg_Info } = msg;
-                // const topicId = topic.topic_id;
-                // const createTime = msg_Info.ctime;
                 const publishTime = msg_Info.ctime * 1000;
                 if (
                   publishTime > startTimeStamp &&
@@ -419,9 +417,9 @@
       ] ?? (topicCount > 1 ? "幸运奖" : "无");
 
     const descriptionHTML = [
-      `🎯 达成 ${efficientDays} 天`,
-      `⭕ ${topicCount} 个圈子`,
-      `🏆 ${reward}`,
+      `🎯 &nbsp;达成 ${efficientDays} 天`,
+      `⭕ &nbsp;${topicCount} 个圈子`,
+      `🏆 &nbsp;${reward}`,
     ]
       .map(
         (text) => `<span style="color:#939aa3;font-weight:bold">${text}</span>`
@@ -432,8 +430,8 @@
         const isVerified = efficientTopics[title]?.verified;
         return `<span style="display: inline-block;
           padding:2px 10px;
-          background-color: ${isVerified ? "#eaf2ff" : "#c2c6cc"};
-          color:${isVerified ? "#1e80ff" : "#393a3c"};
+          background-color: ${isVerified ? "#eaf2ff" : "#e5e7ea"};
+          color:${isVerified ? "#1e80ff" : "#717682"};
           font-size:12px;
           line-height:20px;
           border-radius:50px;
@@ -441,11 +439,11 @@
       })
       .join("");
     const rewardEl = document.createElement("div");
-    rewardEl.innerHTML = `<h3 style="margin:0">破圈行动 <span style="float:right">9/23 - 9/30</span></h3>
+    rewardEl.innerHTML = `<h3 style="margin:0;"><a style="color:inherit" href="https://juejin.cn/pin/7010556755855802376" target="__blank">破圈行动</a> <span style="float:right">9/23 - 9/30</span></h3>
     <p style="display:flex;flex-direction:row;justify-content: space-between;">
     ${descriptionHTML}
     </p>
-    <p>📅 今天 ${todayEfficientTopicTitles.length} / 3</p>
+    <p>📅 &nbsp;今天 ${todayEfficientTopicTitles.length} / 3</p>
     <div>
     ${todayTopicsHTML}
     </div>
