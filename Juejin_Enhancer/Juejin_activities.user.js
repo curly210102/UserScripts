@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.6.5
+// @version      0.1.6.6
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -102,7 +102,10 @@
     currentRouterPathname = document.location.pathname;
     const pagePinsRegexp = /^\/pins(?:\/|$)/;
     const pageProfileRegexp = new RegExp(`^\\/user\\/${userId}(?:\\/|$)`);
-    if (pagePinsRegexp.test(currentRouterPathname) && !pagePinsRegexp.test(prevRouterPathname)) {
+    if (
+      pagePinsRegexp.test(currentRouterPathname) &&
+      !pagePinsRegexp.test(prevRouterPathname)
+    ) {
       // initRewardProgress();
       doUpdate(document).then(() => {
         const containerEl = document.querySelector(".main .userbox");
@@ -116,19 +119,14 @@
         wrapperEl.style = "padding-top:20px;";
         containerEl.appendChild(wrapperEl);
       });
-    }
-    else if (
-      pageProfileRegexp.test(
-        currentRouterPathname
-      ) && !pageProfileRegexp.test(prevRouterPathname)
+    } else if (
+      pageProfileRegexp.test(currentRouterPathname) &&
+      !pageProfileRegexp.test(prevRouterPathname)
     ) {
       fetchAndUpdateGlobalStates().then(() => {
         setTimeout(() => {
           const siblingEl = document.querySelector(".user-view .stat-block");
-          if (!siblingEl) return;
-          siblingEl.parentElement
-            .querySelector(`[data-tampermonkey='${id}']`)
-            ?.remove();
+          const parentEl = document.querySelector(".user-view .sticky-wrap");
           const blockEl = document.createElement("div");
           blockEl.dataset.tampermonkey = id;
           blockEl.className = "block shadow";
@@ -145,7 +143,20 @@
           contentEl.style = `padding: 1.333rem;`;
           contentEl.appendChild(getRewardElement());
           blockEl.appendChild(contentEl);
-          siblingEl.after(blockEl);
+
+          if (siblingEl) {
+            siblingEl.parentElement
+              .querySelector(`[data-tampermonkey='${id}']`)
+              ?.remove();
+            siblingEl.after(blockEl);
+            return;
+          }
+          if (parentEl) {
+            parentEl.querySelector(`[data-tampermonkey='${id}']`)?.remove();
+            parentEl.firstChild
+              ? parentEl.insertBefore(blockEl, parentEl.firstChild)
+              : parentEl.appendChild(blockEl);
+          }
         }, 1000);
       });
     }
@@ -322,11 +333,9 @@
                     title: topic.title,
                     // wait: 0, pass: 1, fail: 2
                     verified:
-                      msg_Info.status === 1 ||
-                      msg_Info.verify_status === 0
+                      msg_Info.status === 1 || msg_Info.verify_status === 0
                         ? 0
-                        : msg_Info.status === 2 &&
-                          msg_Info.verify_status === 1
+                        : msg_Info.status === 2 && msg_Info.verify_status === 1
                         ? 1
                         : 2,
                   });
@@ -389,7 +398,7 @@
           };
         } else {
           topicCountAndVerified[title]["count"]++;
-          topicCountAndVerified[title]["verified"] ||= (verified === 1);
+          topicCountAndVerified[title]["verified"] ||= verified === 1;
         }
       });
     });
