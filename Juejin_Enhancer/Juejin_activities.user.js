@@ -379,8 +379,14 @@
           })
           .map(({ title }) => title)
       );
+      const dailyVerifiedTopicTitles = new Set(
+        topics.filter(({ title, verified }) => {
+          // 破圈：未被破解 + 已通过审核或正在等待审核
+          return !allEfficientTopicTitles.has(title) && verified === 1;
+        })
+      );
       // 更新达标天数
-      if (dailyEfficientTopicTitles.size >= 3) {
+      if (dailyVerifiedTopicTitles.size >= 3) {
         efficientDays++;
       }
       // 记录今日破圈数据
@@ -447,12 +453,19 @@
           margin-left:2px;margin-bottom:2px;">${title}</span>`;
       })
       .join("");
+    const todayVerifiedCount = todayEfficientTopicTitles.filter((title) => {
+      return efficientTopics[title]?.verified;
+    }).length;
+    const todayVerifyCount =
+      todayEfficientTopicTitles.length - todayVerifiedCount;
     const rewardEl = document.createElement("div");
     rewardEl.innerHTML = `<h3 style="margin:0;"><a style="color:inherit" href="https://juejin.cn/pin/7010556755855802376" target="__blank">破圈行动</a> <span style="float:right">9/23 - 9/30</span></h3>
     <p style="display:flex;flex-direction:row;justify-content: space-between;">
     ${descriptionHTML}
     </p>
-    <p>📅 &nbsp;今天 ${todayEfficientTopicTitles.length} / 3</p>
+    <p>📅 &nbsp;今天 ${todayVerifiedCount} / 3 ${
+      todayVerifyCount > 0 ? `&nbsp;🧐 人工审核中&nbsp;${todayVerifyCount} 条` : ""
+    }</p>
     <div>
     ${todayTopicsHTML}
     </div>
