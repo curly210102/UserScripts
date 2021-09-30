@@ -1,7 +1,8 @@
 import { getTopicStates } from "./states";
-import { scriptId, blockTopics } from "./static.json";
+import { scriptId, blockTopics, endTimeStamp } from "./static.json";
 
 export function renderTopicSelectMenu(containerEl) {
+  if (endTimeStamp < new Date().valueOf()) return;
   const topicPanel = containerEl.querySelector(
     ".topicwrapper .new_topic_picker"
   );
