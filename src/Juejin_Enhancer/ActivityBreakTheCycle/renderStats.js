@@ -48,11 +48,11 @@ function getRewardElement() {
       ${descriptionHTML}
       </p>
       ${
-        endTimeStamp >= new Date().valueOf()
-          ? getTodayStatus()
-          : getFinishSummary({
+        endTimeStamp < new Date().valueOf() || efficientDays >= 8
+          ? getFinishSummary({
               isJoined: topicCount > 0,
             })
+          : getTodayStatus()
       }
       `;
 
@@ -88,7 +88,7 @@ function getFinishSummary({ isJoined }) {
 
   if (isJoined) {
     return `<details>
-    <summary style="cursor:pointer;margin-bottom:4px">🎉&nbsp;恭喜完成活动！展开查看破解列表</summary>
+    <summary style="cursor:pointer;margin-bottom:8px">🎉&nbsp;恭喜完成活动！展开查看破解列表</summary>
     ${Object.keys(efficientTopics)
       .map((title) => {
         return renderTag(title);
