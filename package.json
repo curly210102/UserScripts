@@ -4,7 +4,7 @@
   "private": true,
   "description": "一些自制的油猴脚本",
   "scripts": {
-    "dev": "rollup -c -w",
+    "dev": "rollup -c -w -m inline",
     "build": "rollup -c",
     "prepare": "husky install"
   },

@@ -1,5 +1,6 @@
 import { getTopicStates } from "./states";
-import { scriptId } from "./static.json";
+import { scriptId, startTimeStamp, endTimeStamp } from "./static.json";
+import { profileStateRender } from "../utils";
 
 export function renderPinPage() {
   const containerEl = document.querySelector(".main .userbox");
@@ -15,43 +16,15 @@ export function renderPinPage() {
 }
 
 export function renderProfilePage() {
-  const siblingEl = document.querySelector(".user-view .stat-block");
-  const parentEl = document.querySelector(".user-view .sticky-wrap");
-  const blockEl = document.createElement("div");
-  blockEl.dataset.tampermonkey = scriptId;
-  blockEl.className = "block shadow";
-  blockEl.style = `margin-bottom: 1rem;background-color: #fff;border-radius: 2px;`;
-  const titleEl = document.createElement("div");
-  titleEl.style = `padding: 1.333rem;
-            font-size: 1.333rem;
-            font-weight: 600;
-            color: #31445b;
-            border-bottom: 1px solid rgba(230,230,231,.5);`;
-  titleEl.textContent = "活动状态";
-  blockEl.appendChild(titleEl);
-  const contentEl = document.createElement("div");
-  contentEl.style = `padding: 1.333rem;`;
-  contentEl.appendChild(getRewardElement());
-  blockEl.appendChild(contentEl);
-
-  if (siblingEl) {
-    siblingEl.parentElement
-      .querySelector(`[data-tampermonkey='${scriptId}']`)
-      ?.remove();
-    siblingEl.after(blockEl);
-    return;
-  }
-  if (parentEl) {
-    parentEl.querySelector(`[data-tampermonkey='${scriptId}']`)?.remove();
-    parentEl.firstChild
-      ? parentEl.insertBefore(blockEl, parentEl.firstChild)
-      : parentEl.appendChild(blockEl);
-  }
+  profileStateRender.add({
+    startTime: new Date(startTimeStamp),
+    endTime: new Date(endTimeStamp),
+    node: getRewardElement(),
+  });
 }
 
 function getRewardElement() {
-  const { efficientTopics, efficientDays, todayEfficientTopicTitles } =
-    getTopicStates();
+  const { efficientTopics, efficientDays } = getTopicStates();
   const topicCount = Object.values(efficientTopics).filter(
     ({ verified }) => !!verified
   ).length;
@@ -69,17 +42,27 @@ function getRewardElement() {
       (text) => `<span style="color:#939aa3;font-weight:bold">${text}</span>`
     )
     .join("");
+  const rewardEl = document.createElement("div");
+  rewardEl.innerHTML = `<h3 style="margin:0;"><a style="color:inherit" href="https://juejin.cn/pin/7010556755855802376" target="__blank">破圈行动</a> <span style="float:right">9/23 - 9/30</span></h3>
+      <p style="display:flex;flex-direction:row;justify-content: space-between;">
+      ${descriptionHTML}
+      </p>
+      ${
+        endTimeStamp >= new Date().valueOf()
+          ? getTodayStatus()
+          : getFinishSummary()
+      }
+      `;
+
+  return rewardEl;
+}
+
+function getTodayStatus() {
+  const { todayEfficientTopicTitles, efficientTopics } = getTopicStates();
   const todayTopicsHTML = todayEfficientTopicTitles
     .map((title) => {
       const isVerified = efficientTopics[title]?.verified;
-      return `<span style="display: inline-block;
-            padding:2px 10px;
-            background-color: ${isVerified ? "#eaf2ff" : "#e5e7ea"};
-            color:${isVerified ? "#1e80ff" : "#717682"};
-            font-size:12px;
-            line-height:20px;
-            border-radius:50px;
-            margin-left:2px;margin-bottom:2px;">${title}</span>`;
+      return renderTag(title, isVerified);
     })
     .join("");
   const todayVerifiedCount = todayEfficientTopicTitles.filter((title) => {
@@ -87,20 +70,37 @@ function getRewardElement() {
   }).length;
   const todayVerifyCount =
     todayEfficientTopicTitles.length - todayVerifiedCount;
-  const rewardEl = document.createElement("div");
-  rewardEl.innerHTML = `<h3 style="margin:0;"><a style="color:inherit" href="https://juejin.cn/pin/7010556755855802376" target="__blank">破圈行动</a> <span style="float:right">9/23 - 9/30</span></h3>
-      <p style="display:flex;flex-direction:row;justify-content: space-between;">
-      ${descriptionHTML}
-      </p>
-      <p>📅 &nbsp;今天 ${todayVerifiedCount} / 3 ${
+
+  return `<p>📅 &nbsp;今天 ${todayVerifiedCount} / 3 ${
     todayVerifyCount > 0
       ? `&nbsp;🧐 人工审核中&nbsp;${todayVerifyCount} 条`
       : ""
   }</p>
       <div>
       ${todayTopicsHTML}
-      </div>
-      `;
+      </div>`;
+}
 
-  return rewardEl;
+function getFinishSummary() {
+  const { efficientTopics } = getTopicStates();
+
+  return `<details>
+  <summary style="cursor:pointer;margin-bottom:4px">🎉&nbsp;展开查看破解列表</summary>
+  ${Object.keys(efficientTopics)
+    .map((title) => {
+      return renderTag(title);
+    })
+    .join("")}
+  </details>`;
+}
+
+function renderTag(title, isVerified = true) {
+  return `<span style="display: inline-block;
+  padding:2px 10px;
+  background-color: ${isVerified ? "#eaf2ff" : "#e5e7ea"};
+  color:${isVerified ? "#1e80ff" : "#717682"};
+  font-size:12px;
+  line-height:20px;
+  border-radius:50px;
+  margin-left:2px;margin-bottom:2px;">${title}</span>`;
 }

@@ -1,99 +1,91 @@
-import { blockTopics, startTimeStamp, endTimeStamp } from "./static.json";
+import {
+  scriptId,
+  blockTopics,
+  startTimeStamp,
+  endTimeStamp,
+} from "./static.json";
+import { fetchData } from "../utils";
 
-const states = {
-  userId: "",
+const states = GM_getValue(scriptId, {
+  checkPoint: 0,
   topics: {
     todayEfficientTopicTitles: [],
     efficientDays: 0,
     efficientTopics: {},
   },
-};
+});
+
+function getCheckPoint() {
+  return states.checkPoint;
+}
 
 export function getTopicStates() {
   return states.topics;
 }
 
 export function setTopicStates(value) {
+  states.checkPoint = new Date().valueOf();
   states.topics = value;
+  GM_setValue(scriptId, states);
 }
-
-export function setUserId(userId) {
-  states.userId = userId;
-}
-
-export function getUserId() {
-  return states.userId;
-}
-
 export async function fetchStates() {
+  if (getCheckPoint() > endTimeStamp) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        resolve(getTopicStates());
+      });
+    });
+  }
+
   const dailyTopics = await requestShortMsgTopic();
   updateGlobalStates(dailyTopics);
 }
 
 function requestShortMsgTopic(cursor = "0", dailyTopics = []) {
-  return new Promise((resolve, reject) => {
-    GM_xmlhttpRequest({
-      method: "POST",
-      url: "https://api.juejin.cn/content_api/v1/short_msg/query_list",
-      data: JSON.stringify({
-        sort_type: 4,
-        cursor: cursor,
-        limit: 24,
-        user_id: getUserId(),
-      }),
-      headers: {
-        "User-agent": window.navigator.userAgent,
-        "content-type": "application/json",
-      },
-      onload: function ({ status, response }) {
-        try {
-          if (status === 200) {
-            const responseData = JSON.parse(response);
-            const { data, cursor, has_more } = responseData;
-            let lastPublishTime = Infinity;
-            for (const msg of data) {
-              const { topic, msg_Info } = msg;
-              const publishTime = msg_Info.ctime * 1000;
-              if (
-                publishTime > startTimeStamp &&
-                publishTime < endTimeStamp &&
-                !blockTopics.includes(topic.title)
-              ) {
-                const day = Math.floor(
-                  (publishTime - startTimeStamp) / 86400000
-                );
-                if (!dailyTopics[day]) {
-                  dailyTopics[day] = [];
-                }
-                dailyTopics[day].push({
-                  title: topic.title,
-                  // wait: 0, pass: 1, fail: 2
-                  verified:
-                    msg_Info.status === 1 || msg_Info.verify_status === 0
-                      ? 0
-                      : msg_Info.status === 2 && msg_Info.verify_status === 1
-                      ? 1
-                      : 2,
-                });
-              }
-              lastPublishTime = publishTime;
-              if (publishTime < startTimeStamp) {
-                break;
-              }
-            }
-
-            if (lastPublishTime > startTimeStamp && has_more) {
-              resolve(requestShortMsgTopic(cursor, dailyTopics));
-            } else {
-              resolve(dailyTopics);
-            }
-          }
-        } catch (err) {
-          console.log(err);
-          reject(err);
+  return fetchData({
+    url: "https://api.juejin.cn/content_api/v1/short_msg/query_list",
+    data: {
+      sort_type: 4,
+      limit: 24,
+      cursor,
+    },
+  }).then((responseData) => {
+    const { data, cursor, has_more } = responseData;
+    let lastPublishTime = Infinity;
+    for (const msg of data) {
+      const { topic, msg_Info } = msg;
+      const publishTime = msg_Info.ctime * 1000;
+      if (
+        publishTime > startTimeStamp &&
+        publishTime < endTimeStamp &&
+        !blockTopics.includes(topic.title)
+      ) {
+        const day = Math.floor((publishTime - startTimeStamp) / 86400000);
+        if (!dailyTopics[day]) {
+          dailyTopics[day] = [];
         }
-      },
-    });
+        dailyTopics[day].push({
+          title: topic.title,
+          // wait: 0, pass: 1, fail: 2
+          verified:
+            msg_Info.verify_status === 0
+              ? 0
+              : msg_Info.audit_status === 2 && msg_Info.verify_status === 1
+              ? 1
+              : 2,
+        });
+      }
+      lastPublishTime = publishTime;
+      if (publishTime < startTimeStamp) {
+        break;
+      }
+    }
+
+    if (lastPublishTime > startTimeStamp && has_more) {
+      return requestShortMsgTopic(cursor, dailyTopics);
+    } else {
+      return dailyTopics;
+    }
   });
 }
 
@@ -121,6 +113,7 @@ function updateGlobalStates(dailyTopics) {
         return !allEfficientTopicTitles.has(title) && verified === 1;
       })
     );
+
     // 更新达标天数
     if (dailyVerifiedTopicTitles.size >= 3) {
       efficientDays++;

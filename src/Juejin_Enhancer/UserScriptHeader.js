@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.6.6
+// @version      0.1.6.7
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*

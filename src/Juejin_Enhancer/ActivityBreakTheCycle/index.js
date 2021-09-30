@@ -1,55 +1,17 @@
 import { renderPinPage, renderProfilePage } from "./renderStats";
 import { renderTopicSelectMenu } from "./renderMenuSelect";
-import { fetchStates, setUserId, getUserId } from "./states";
-let currentRouterPathname = "";
+import { fetchStates } from "./states";
+import { inPinPage, inProfilePage } from "../utils";
 
-export default function () {
-  const userProfileEl = document.querySelector(
-    ".user-dropdown-list > .nav-menu-item-group:nth-child(2) > .nav-menu-item > a[href]"
-  );
-  const userId = userProfileEl?.getAttribute("href").replace(/\/user\//, "");
-
-  if (!userId) {
-    return;
-  }
-
-  setUserId(userId);
-  initRouter();
-  initPopupMutation();
-}
-
-function initRouter() {
-  const _historyPushState = history.pushState;
-  const _historyReplaceState = history.replaceState;
-  history.pushState = function () {
-    _historyPushState.apply(history, arguments);
-    onRouteChange();
-  };
-  history.replaceState = function () {
-    _historyReplaceState.apply(history, arguments);
-    onRouteChange();
-  };
-  window.addEventListener("popstate", function () {
-    onRouteChange();
-  });
-}
-
-function onRouteChange() {
-  const prevRouterPathname = currentRouterPathname;
-  currentRouterPathname = document.location.pathname;
-  const pagePinsRegexp = /^\/pins(?:\/|$)/;
-  const pageProfileRegexp = new RegExp(`^\\/user\\/${getUserId()}(?:\\/|$)`);
-  if (
-    pagePinsRegexp.test(currentRouterPathname) &&
-    !pagePinsRegexp.test(prevRouterPathname)
-  ) {
+function onRouteChange(prevRouterPathname, currentRouterPathname) {
+  if (inPinPage(currentRouterPathname) && !inPinPage(prevRouterPathname)) {
     fetchStates().then(() => {
       renderTopicSelectMenu(document);
       renderPinPage();
     });
   } else if (
-    pageProfileRegexp.test(currentRouterPathname) &&
-    !pageProfileRegexp.test(prevRouterPathname)
+    inProfilePage(currentRouterPathname) &&
+    !inProfilePage(prevRouterPathname)
   ) {
     fetchStates().then(() => {
       setTimeout(() => {
@@ -93,3 +55,8 @@ function initPopupMutation() {
     });
   }
 }
+
+export default {
+  onRouteChange,
+  onLoaded: initPopupMutation,
+};

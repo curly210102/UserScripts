@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.6.6
+// @version      0.1.6.7
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -16,6 +16,7 @@
 // @downloadURL  https://gitee.com/curlly-brackets/UserScripts/raw/gitee/Juejin_Enhancer/Juejin_activities.user.js
 // @connect      juejin.cn
 // ==/UserScript==
+
 (function () {
 	'use strict';
 
@@ -1367,45 +1368,38 @@
 		"掘金官方",
 		"上班摸鱼"
 	];
-	var scriptId = "juejin-activies-enhancer/break-the-circle";
+	var scriptId$1 = "juejin-activies-enhancer/break-the-circle";
 	var startTimeStamp = "1632326400000";
 	var endTimeStamp = "1633017600000";
 
-	const states = {
-	  userId: "",
-	  topics: {
-	    todayEfficientTopicTitles: [],
-	    efficientDays: 0,
-	    efficientTopics: {}
-	  }
+	const states$1 = {
+	  userId: ""
 	};
-	function getTopicStates() {
-	  return states.topics;
-	}
-	function setTopicStates(value) {
-	  states.topics = value;
+	function getUserId() {
+	  return states$1.userId;
 	}
 	function setUserId(userId) {
-	  states.userId = userId;
-	}
-	function getUserId() {
-	  return states.userId;
-	}
-	async function fetchStates() {
-	  const dailyTopics = await requestShortMsgTopic();
-	  updateGlobalStates(dailyTopics);
+	  states$1.userId = userId;
 	}
 
-	function requestShortMsgTopic(cursor = "0", dailyTopics = []) {
+	const scriptId = "juejin-activies-enhancer";
+	const inPinPage = pathname => {
+	  return /^\/pins(?:\/|$)/.test(pathname);
+	};
+	const inProfilePage = pathname => {
+	  return new RegExp(`^\\/user\\/${getUserId()}(?:\\/|$)`).test(pathname);
+	};
+	function fetchData({
+	  url,
+	  data = {}
+	}) {
 	  return new Promise((resolve, reject) => {
 	    GM_xmlhttpRequest({
 	      method: "POST",
-	      url: "https://api.juejin.cn/content_api/v1/short_msg/query_list",
+	      url,
 	      data: JSON.stringify({
-	        sort_type: 4,
-	        cursor: cursor,
-	        limit: 24,
-	        user_id: getUserId()
+	        user_id: getUserId(),
+	        ...data
 	      }),
 	      headers: {
 	        "User-agent": window.navigator.userAgent,
@@ -1418,46 +1412,9 @@
 	        try {
 	          if (status === 200) {
 	            const responseData = JSON.parse(response);
-	            const {
-	              data,
-	              cursor,
-	              has_more
-	            } = responseData;
-	            let lastPublishTime = Infinity;
-
-	            for (const msg of data) {
-	              const {
-	                topic,
-	                msg_Info
-	              } = msg;
-	              const publishTime = msg_Info.ctime * 1000;
-
-	              if (publishTime > startTimeStamp && publishTime < endTimeStamp && !blockTopics.includes(topic.title)) {
-	                const day = Math.floor((publishTime - startTimeStamp) / 86400000);
-
-	                if (!dailyTopics[day]) {
-	                  dailyTopics[day] = [];
-	                }
-
-	                dailyTopics[day].push({
-	                  title: topic.title,
-	                  // wait: 0, pass: 1, fail: 2
-	                  verified: msg_Info.status === 1 || msg_Info.verify_status === 0 ? 0 : msg_Info.status === 2 && msg_Info.verify_status === 1 ? 1 : 2
-	                });
-	              }
-
-	              lastPublishTime = publishTime;
-
-	              if (publishTime < startTimeStamp) {
-	                break;
-	              }
-	            }
-
-	            if (lastPublishTime > startTimeStamp && has_more) {
-	              resolve(requestShortMsgTopic(cursor, dailyTopics));
-	            } else {
-	              resolve(dailyTopics);
-	            }
+	            resolve(responseData);
+	          } else {
+	            reject(response);
 	          }
 	        } catch (err) {
 	          console.log(err);
@@ -1465,6 +1422,173 @@
 	        }
 	      }
 	    });
+	  });
+	}
+
+	class ProfileStatRender {
+	  constructor() {
+	    const blockEl = document.createElement("div");
+	    blockEl.dataset.tampermonkey = scriptId;
+	    blockEl.className = "block shadow";
+	    blockEl.style = `margin-bottom: 1rem;background-color: #fff;border-radius: 2px;`;
+	    const titleEl = document.createElement("div");
+	    titleEl.style = `padding: 1.333rem;
+              font-size: 1.333rem;
+              font-weight: 600;
+              color: #31445b;
+              border-bottom: 1px solid rgba(230,230,231,.5);`;
+	    titleEl.textContent = "活动状态";
+	    blockEl.appendChild(titleEl);
+	    const contentEl = document.createElement("div");
+	    contentEl.style = `padding: 1.333rem;`;
+	    blockEl.appendChild(contentEl);
+	    this.blockEl = blockEl;
+	    this.contentEl = contentEl;
+	    this.data = [];
+	  }
+
+	  add(data) {
+	    const now = new Date().valueOf();
+	    this.data.push(data);
+	    this.data.sort((a, b) => {
+	      const isFinishA = a.endTime > now;
+	      const isFinishB = b.endTime > now;
+	      if (isFinishA && !isFinishB) return -1;else if (isFinishB && !isFinishA) return 1;
+	      return b.startTime - a.startTime;
+	    });
+	    this.render();
+	  }
+
+	  render() {
+	    const container = this.contentEl;
+	    const currentDOM = container.children;
+	    this.data.forEach(({
+	      node
+	    }, index) => {
+	      const element = currentDOM[index];
+
+	      if (!element) {
+	        container.appendChild(node);
+	        return;
+	      }
+
+	      if (element !== node) {
+	        element.replaceWith(node);
+	      }
+	    });
+
+	    for (let i = this.data.length, len = currentDOM.length; i < len; i++) {
+	      container.removeChild(currentDOM[i]);
+	    }
+
+	    if (!this.blockEl.isConnected) {
+	      const siblingEl = document.querySelector(".user-view .stat-block");
+	      const parentEl = document.querySelector(".user-view .sticky-wrap");
+
+	      if (siblingEl) {
+	        var _siblingEl$parentElem;
+
+	        (_siblingEl$parentElem = siblingEl.parentElement.querySelector(`[data-tampermonkey='${scriptId}']`)) === null || _siblingEl$parentElem === void 0 ? void 0 : _siblingEl$parentElem.remove();
+	        siblingEl.after(this.blockEl);
+	        return;
+	      }
+
+	      if (parentEl) {
+	        var _parentEl$querySelect;
+
+	        (_parentEl$querySelect = parentEl.querySelector(`[data-tampermonkey='${scriptId}']`)) === null || _parentEl$querySelect === void 0 ? void 0 : _parentEl$querySelect.remove();
+	        parentEl.firstChild ? parentEl.insertBefore(this.blockEl, parentEl.firstChild) : parentEl.appendChild(this.blockEl);
+	      }
+	    }
+	  }
+
+	}
+
+	const profileStateRender = new ProfileStatRender();
+
+	const states = GM_getValue(scriptId$1, {
+	  checkPoint: 0,
+	  topics: {
+	    todayEfficientTopicTitles: [],
+	    efficientDays: 0,
+	    efficientTopics: {}
+	  }
+	});
+
+	function getCheckPoint() {
+	  return states.checkPoint;
+	}
+
+	function getTopicStates() {
+	  return states.topics;
+	}
+	function setTopicStates(value) {
+	  states.checkPoint = new Date().valueOf();
+	  states.topics = value;
+	  GM_setValue(scriptId$1, states);
+	}
+	async function fetchStates() {
+	  if (getCheckPoint() > endTimeStamp) {
+	    return new Promise(resolve => {
+	      setTimeout(() => {
+	        resolve(getTopicStates());
+	      });
+	    });
+	  }
+
+	  const dailyTopics = await requestShortMsgTopic();
+	  updateGlobalStates(dailyTopics);
+	}
+
+	function requestShortMsgTopic(cursor = "0", dailyTopics = []) {
+	  return fetchData({
+	    url: "https://api.juejin.cn/content_api/v1/short_msg/query_list",
+	    data: {
+	      sort_type: 4,
+	      limit: 24,
+	      cursor
+	    }
+	  }).then(responseData => {
+	    const {
+	      data,
+	      cursor,
+	      has_more
+	    } = responseData;
+	    let lastPublishTime = Infinity;
+
+	    for (const msg of data) {
+	      const {
+	        topic,
+	        msg_Info
+	      } = msg;
+	      const publishTime = msg_Info.ctime * 1000;
+
+	      if (publishTime > startTimeStamp && publishTime < endTimeStamp && !blockTopics.includes(topic.title)) {
+	        const day = Math.floor((publishTime - startTimeStamp) / 86400000);
+
+	        if (!dailyTopics[day]) {
+	          dailyTopics[day] = [];
+	        }
+
+	        dailyTopics[day].push({
+	          title: topic.title,
+	          // wait: 0, pass: 1, fail: 2
+	          verified: msg_Info.verify_status === 0 ? 0 : msg_Info.audit_status === 2 && msg_Info.verify_status === 1 ? 1 : 2
+	        });
+	      }
+
+	      lastPublishTime = publishTime;
+
+	      if (publishTime < startTimeStamp) {
+	        break;
+	      }
+	    }
+
+	    if (lastPublishTime > startTimeStamp && has_more) {
+	      return requestShortMsgTopic(cursor, dailyTopics);
+	    } else {
+	      return dailyTopics;
+	    }
 	  });
 	}
 
@@ -1540,72 +1664,51 @@
 	    return;
 	  }
 
-	  (_containerEl$querySel = containerEl.querySelector(`[data-tampermonkey='${scriptId}']`)) === null || _containerEl$querySel === void 0 ? void 0 : _containerEl$querySel.remove();
+	  (_containerEl$querySel = containerEl.querySelector(`[data-tampermonkey='${scriptId$1}']`)) === null || _containerEl$querySel === void 0 ? void 0 : _containerEl$querySel.remove();
 	  const wrapperEl = document.createElement("div");
-	  wrapperEl.dataset.tampermonkey = scriptId;
+	  wrapperEl.dataset.tampermonkey = scriptId$1;
 	  wrapperEl.appendChild(getRewardElement());
 	  wrapperEl.style = "padding-top:20px;";
 	  containerEl.appendChild(wrapperEl);
 	}
 	function renderProfilePage() {
-	  const siblingEl = document.querySelector(".user-view .stat-block");
-	  const parentEl = document.querySelector(".user-view .sticky-wrap");
-	  const blockEl = document.createElement("div");
-	  blockEl.dataset.tampermonkey = scriptId;
-	  blockEl.className = "block shadow";
-	  blockEl.style = `margin-bottom: 1rem;background-color: #fff;border-radius: 2px;`;
-	  const titleEl = document.createElement("div");
-	  titleEl.style = `padding: 1.333rem;
-            font-size: 1.333rem;
-            font-weight: 600;
-            color: #31445b;
-            border-bottom: 1px solid rgba(230,230,231,.5);`;
-	  titleEl.textContent = "活动状态";
-	  blockEl.appendChild(titleEl);
-	  const contentEl = document.createElement("div");
-	  contentEl.style = `padding: 1.333rem;`;
-	  contentEl.appendChild(getRewardElement());
-	  blockEl.appendChild(contentEl);
-
-	  if (siblingEl) {
-	    var _siblingEl$parentElem;
-
-	    (_siblingEl$parentElem = siblingEl.parentElement.querySelector(`[data-tampermonkey='${scriptId}']`)) === null || _siblingEl$parentElem === void 0 ? void 0 : _siblingEl$parentElem.remove();
-	    siblingEl.after(blockEl);
-	    return;
-	  }
-
-	  if (parentEl) {
-	    var _parentEl$querySelect;
-
-	    (_parentEl$querySelect = parentEl.querySelector(`[data-tampermonkey='${scriptId}']`)) === null || _parentEl$querySelect === void 0 ? void 0 : _parentEl$querySelect.remove();
-	    parentEl.firstChild ? parentEl.insertBefore(blockEl, parentEl.firstChild) : parentEl.appendChild(blockEl);
-	  }
+	  profileStateRender.add({
+	    startTime: new Date(startTimeStamp),
+	    endTime: new Date(endTimeStamp),
+	    node: getRewardElement()
+	  });
 	}
 
 	function getRewardElement() {
 	  const {
 	    efficientTopics,
-	    efficientDays,
-	    todayEfficientTopicTitles
+	    efficientDays
 	  } = getTopicStates();
 	  const topicCount = Object.values(efficientTopics).filter(({
 	    verified
 	  }) => !!verified).length;
 	  const reward = ["幸运奖", "三等奖", "二等奖", "一等奖", "全勤奖"][efficientDays >= 8 ? 4 : Math.floor((efficientDays - 1) / 2)] ?? (topicCount > 1 ? "幸运奖" : "无");
 	  const descriptionHTML = [`🎯 &nbsp;达成 ${efficientDays} 天`, `⭕ &nbsp;${topicCount} 个圈子`, `🏆 &nbsp;${reward}`].map(text => `<span style="color:#939aa3;font-weight:bold">${text}</span>`).join("");
+	  const rewardEl = document.createElement("div");
+	  rewardEl.innerHTML = `<h3 style="margin:0;"><a style="color:inherit" href="https://juejin.cn/pin/7010556755855802376" target="__blank">破圈行动</a> <span style="float:right">9/23 - 9/30</span></h3>
+      <p style="display:flex;flex-direction:row;justify-content: space-between;">
+      ${descriptionHTML}
+      </p>
+      ${endTimeStamp >= new Date().valueOf() ? getTodayStatus() : getFinishSummary()}
+      `;
+	  return rewardEl;
+	}
+
+	function getTodayStatus() {
+	  const {
+	    todayEfficientTopicTitles,
+	    efficientTopics
+	  } = getTopicStates();
 	  const todayTopicsHTML = todayEfficientTopicTitles.map(title => {
 	    var _efficientTopics$titl;
 
 	    const isVerified = (_efficientTopics$titl = efficientTopics[title]) === null || _efficientTopics$titl === void 0 ? void 0 : _efficientTopics$titl.verified;
-	    return `<span style="display: inline-block;
-            padding:2px 10px;
-            background-color: ${isVerified ? "#eaf2ff" : "#e5e7ea"};
-            color:${isVerified ? "#1e80ff" : "#717682"};
-            font-size:12px;
-            line-height:20px;
-            border-radius:50px;
-            margin-left:2px;margin-bottom:2px;">${title}</span>`;
+	    return renderTag(title, isVerified);
 	  }).join("");
 	  const todayVerifiedCount = todayEfficientTopicTitles.filter(title => {
 	    var _efficientTopics$titl2;
@@ -1613,20 +1716,37 @@
 	    return (_efficientTopics$titl2 = efficientTopics[title]) === null || _efficientTopics$titl2 === void 0 ? void 0 : _efficientTopics$titl2.verified;
 	  }).length;
 	  const todayVerifyCount = todayEfficientTopicTitles.length - todayVerifiedCount;
-	  const rewardEl = document.createElement("div");
-	  rewardEl.innerHTML = `<h3 style="margin:0;"><a style="color:inherit" href="https://juejin.cn/pin/7010556755855802376" target="__blank">破圈行动</a> <span style="float:right">9/23 - 9/30</span></h3>
-      <p style="display:flex;flex-direction:row;justify-content: space-between;">
-      ${descriptionHTML}
-      </p>
-      <p>📅 &nbsp;今天 ${todayVerifiedCount} / 3 ${todayVerifyCount > 0 ? `&nbsp;🧐 人工审核中&nbsp;${todayVerifyCount} 条` : ""}</p>
+	  return `<p>📅 &nbsp;今天 ${todayVerifiedCount} / 3 ${todayVerifyCount > 0 ? `&nbsp;🧐 人工审核中&nbsp;${todayVerifyCount} 条` : ""}</p>
       <div>
       ${todayTopicsHTML}
-      </div>
-      `;
-	  return rewardEl;
+      </div>`;
+	}
+
+	function getFinishSummary() {
+	  const {
+	    efficientTopics
+	  } = getTopicStates();
+	  return `<details>
+  <summary style="cursor:pointer;margin-bottom:4px">🎉&nbsp;展开查看破解列表</summary>
+  ${Object.keys(efficientTopics).map(title => {
+    return renderTag(title);
+  }).join("")}
+  </details>`;
+	}
+
+	function renderTag(title, isVerified = true) {
+	  return `<span style="display: inline-block;
+  padding:2px 10px;
+  background-color: ${isVerified ? "#eaf2ff" : "#e5e7ea"};
+  color:${isVerified ? "#1e80ff" : "#717682"};
+  font-size:12px;
+  line-height:20px;
+  border-radius:50px;
+  margin-left:2px;margin-bottom:2px;">${title}</span>`;
 	}
 
 	function renderTopicSelectMenu(containerEl) {
+	  if (endTimeStamp < new Date().valueOf()) return;
 	  const topicPanel = containerEl.querySelector(".topicwrapper .new_topic_picker");
 
 	  if (!topicPanel) {
@@ -1676,13 +1796,13 @@
 	    efficientTopics
 	  } = getTopicStates();
 	  if (!itemEl || !(itemEl.nodeType === 1 && itemEl.nodeName === "DIV" && itemEl.classList.contains("item")) || !((_itemEl$parentElement = itemEl.parentElement) !== null && _itemEl$parentElement !== void 0 && _itemEl$parentElement.classList.contains("contents")) && !((_itemEl$parentElement2 = itemEl.parentElement) !== null && _itemEl$parentElement2 !== void 0 && _itemEl$parentElement2.classList.contains("searchlist"))) return;
-	  (_itemEl$querySelector = itemEl.querySelector(`[data-tampermonkey='${scriptId}']`)) === null || _itemEl$querySelector === void 0 ? void 0 : _itemEl$querySelector.remove();
+	  (_itemEl$querySelector = itemEl.querySelector(`[data-tampermonkey='${scriptId$1}']`)) === null || _itemEl$querySelector === void 0 ? void 0 : _itemEl$querySelector.remove();
 	  const title = (_itemEl$querySelector2 = itemEl.querySelector(".content_main > .title")) === null || _itemEl$querySelector2 === void 0 ? void 0 : _itemEl$querySelector2.textContent;
 	  const isBlockedTopic = blockTopics.includes(title);
 	  const count = (_efficientTopics$titl = efficientTopics[title]) === null || _efficientTopics$titl === void 0 ? void 0 : _efficientTopics$titl.count;
 	  const verified = (_efficientTopics$titl2 = efficientTopics[title]) === null || _efficientTopics$titl2 === void 0 ? void 0 : _efficientTopics$titl2.verified;
 	  const iconEl = document.createElement("div");
-	  iconEl.dataset.tampermonkey = scriptId;
+	  iconEl.dataset.tampermonkey = scriptId$1;
 
 	  if (count) {
 	    iconEl.style = `width: 18px;
@@ -1746,53 +1866,13 @@
 	  itemEl.appendChild(iconEl);
 	}
 
-	let currentRouterPathname = "";
-	function BreakTheCycle () {
-	  const userProfileEl = document.querySelector(".user-dropdown-list > .nav-menu-item-group:nth-child(2) > .nav-menu-item > a[href]");
-	  const userId = userProfileEl === null || userProfileEl === void 0 ? void 0 : userProfileEl.getAttribute("href").replace(/\/user\//, "");
-
-	  if (!userId) {
-	    return;
-	  }
-
-	  setUserId(userId);
-	  initRouter();
-	  initPopupMutation();
-	}
-
-	function initRouter() {
-	  const _historyPushState = history.pushState;
-	  const _historyReplaceState = history.replaceState;
-
-	  history.pushState = function () {
-	    _historyPushState.apply(history, arguments);
-
-	    onRouteChange();
-	  };
-
-	  history.replaceState = function () {
-	    _historyReplaceState.apply(history, arguments);
-
-	    onRouteChange();
-	  };
-
-	  window.addEventListener("popstate", function () {
-	    onRouteChange();
-	  });
-	}
-
-	function onRouteChange() {
-	  const prevRouterPathname = currentRouterPathname;
-	  currentRouterPathname = document.location.pathname;
-	  const pagePinsRegexp = /^\/pins(?:\/|$)/;
-	  const pageProfileRegexp = new RegExp(`^\\/user\\/${getUserId()}(?:\\/|$)`);
-
-	  if (pagePinsRegexp.test(currentRouterPathname) && !pagePinsRegexp.test(prevRouterPathname)) {
+	function onRouteChange$1(prevRouterPathname, currentRouterPathname) {
+	  if (inPinPage(currentRouterPathname) && !inPinPage(prevRouterPathname)) {
 	    fetchStates().then(() => {
 	      renderTopicSelectMenu(document);
 	      renderPinPage();
 	    });
-	  } else if (pageProfileRegexp.test(currentRouterPathname) && !pageProfileRegexp.test(prevRouterPathname)) {
+	  } else if (inProfilePage(currentRouterPathname) && !inProfilePage(prevRouterPathname)) {
 	    fetchStates().then(() => {
 	      setTimeout(() => {
 	        renderProfilePage();
@@ -1841,6 +1921,61 @@
 	  }
 	}
 
-	BreakTheCycle();
+	var BreakTheCycle = {
+	  onRouteChange: onRouteChange$1,
+	  onLoaded: initPopupMutation
+	};
+
+	const activities = [BreakTheCycle];
+	let currentRouterPathname = "";
+
+	(function start() {
+	  const userProfileEl = document.querySelector(".user-dropdown-list > .nav-menu-item-group:nth-child(2) > .nav-menu-item > a[href]");
+	  const userId = userProfileEl === null || userProfileEl === void 0 ? void 0 : userProfileEl.getAttribute("href").replace(/\/user\//, "");
+
+	  if (!userId) {
+	    return;
+	  }
+
+	  setUserId(userId);
+	  initRouter();
+	  activities.forEach(({
+	    onLoaded
+	  }) => onLoaded === null || onLoaded === void 0 ? void 0 : onLoaded());
+	})();
+
+	function initRouter() {
+	  const _historyPushState = history.pushState;
+	  const _historyReplaceState = history.replaceState;
+
+	  history.pushState = function () {
+	    _historyPushState.apply(history, arguments);
+
+	    onRouteChange();
+	  };
+
+	  history.replaceState = function () {
+	    _historyReplaceState.apply(history, arguments);
+
+	    onRouteChange();
+	  };
+
+	  window.addEventListener("popstate", function () {
+	    onRouteChange();
+	  });
+	}
+
+	function onRouteChange() {
+	  const prevRouterPathname = currentRouterPathname;
+	  currentRouterPathname = document.location.pathname;
+
+	  if (prevRouterPathname !== currentRouterPathname) {
+	    activities.forEach(({
+	      onRouteChange
+	    }) => {
+	      onRouteChange === null || onRouteChange === void 0 ? void 0 : onRouteChange(prevRouterPathname, currentRouterPathname);
+	    });
+	  }
+	}
 
 })();

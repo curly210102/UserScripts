@@ -1415,7 +1415,7 @@
 	    console.log("Library");
 	    GM_xmlhttpRequest({
 	      method: "GET",
-	      url: 'https://my1.hzlib.net/opac/api/search?q=' + isbn + '&searchType=standard&isFacet=true&view=standard&searchWay=isbn&rows=10&sortWay=score&sortOrder=desc&searchWay0=marc&logical0=AND&wt=json',
+	      url: "https://my1.hzlib.net/opac/api/search?q=" + isbn + "&searchType=standard&isFacet=true&view=standard&searchWay=isbn&rows=10&sortWay=score&sortOrder=desc&searchWay0=marc&logical0=AND&wt=json",
 	      headers: {
 	        "User-agent": window.navigator.userAgent
 	      },
@@ -1440,15 +1440,15 @@
 	                const books = result.previews[bookid].filter(item => libcodes.has(item.curlib));
 	                console.log(result);
 	                books.forEach(function (data) {
-	                  const libraryName = data.curlibName + ' ' + data.curlocalName;
+	                  const libraryName = data.curlibName + " " + data.curlocalName;
 	                  const callno = data.callno;
 	                  const loanableCount = data.loanableCount;
 	                  const copycount = data.copycount;
-	                  const bookUrl = 'https://my1.hzlib.net/opac/book/' + bookid;
+	                  const bookUrl = "https://my1.hzlib.net/opac/book/" + bookid;
 	                  let buyItemTemplate = '<li> <div class="cell price-btn-wrapper"> <div class="vendor-name"> <a target="_blank" href="{templateUrl}"> <span>{templateLibraryName}</span> </a> </div> <div class="cell impression_track_mod_buyinfo"> <div class="cell price-wrapper"> <a target="_blank" href="{templateUrl}"> <span class="buylink-price "> 可借 {templateLoanable} </span> </a> </div> <div class="cell"> <a target="_blank" href="{templateUrl}" class="buy-book-btn e-book-btn" style="height: auto"> <span>{templateCallno}</span> </a> </div> </div> </div> </li>';
 	                  buyItemTemplate = buyItemTemplate.replaceAll("{templateLibraryName}", libraryName);
 	                  buyItemTemplate = buyItemTemplate.replaceAll("{templateUrl}", bookUrl);
-	                  buyItemTemplate = buyItemTemplate.replace("{templateLoanable}", loanableCount + '/' + copycount);
+	                  buyItemTemplate = buyItemTemplate.replace("{templateLoanable}", loanableCount + "/" + copycount);
 	                  buyItemTemplate = buyItemTemplate.replace("{templateCallno}", callno);
 	                  $("#buyinfo ul:nth-child(2)").prepend(buyItemTemplate);
 	                });
