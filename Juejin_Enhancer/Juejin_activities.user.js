@@ -1694,7 +1694,9 @@
       <p style="display:flex;flex-direction:row;justify-content: space-between;">
       ${descriptionHTML}
       </p>
-      ${endTimeStamp >= new Date().valueOf() ? getTodayStatus() : getFinishSummary()}
+      ${endTimeStamp >= new Date().valueOf() ? getTodayStatus() : getFinishSummary({
+    isJoined: topicCount > 0
+  })}
       `;
 	  return rewardEl;
 	}
@@ -1722,16 +1724,23 @@
       </div>`;
 	}
 
-	function getFinishSummary() {
+	function getFinishSummary({
+	  isJoined
+	}) {
 	  const {
 	    efficientTopics
 	  } = getTopicStates();
-	  return `<details>
-  <summary style="cursor:pointer;margin-bottom:4px">🎉&nbsp;展开查看破解列表</summary>
-  ${Object.keys(efficientTopics).map(title => {
-    return renderTag(title);
-  }).join("")}
-  </details>`;
+
+	  if (isJoined) {
+	    return `<details>
+    <summary style="cursor:pointer;margin-bottom:4px">🎉&nbsp;恭喜完成活动！展开查看破解列表</summary>
+    ${Object.keys(efficientTopics).map(title => {
+      return renderTag(title);
+    }).join("")}
+    </details>`;
+	  } else {
+	    return `<p style="color:#939aa3;">⌛️ 活动已结束</p>`;
+	  }
 	}
 
 	function renderTag(title, isVerified = true) {
