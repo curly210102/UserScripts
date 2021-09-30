@@ -15,16 +15,17 @@ export function renderPinPage() {
   containerEl.appendChild(wrapperEl);
 }
 
-export function renderProfilePage() {
+export function renderProfilePage(topicStates) {
   profileStateRender.add({
+    id: scriptId,
     startTime: new Date(startTimeStamp),
     endTime: new Date(endTimeStamp),
-    node: getRewardElement(),
+    node: getRewardElement(topicStates),
   });
 }
 
-function getRewardElement() {
-  const { efficientTopics, efficientDays } = getTopicStates();
+function getRewardElement(topicStates = getTopicStates()) {
+  const { efficientTopics, efficientDays } = topicStates;
   const topicCount = Object.values(efficientTopics).filter(
     ({ verified }) => !!verified
   ).length;

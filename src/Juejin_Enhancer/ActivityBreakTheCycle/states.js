@@ -5,6 +5,7 @@ import {
   endTimeStamp,
 } from "./static.json";
 import { fetchData } from "../utils";
+import { getUserId } from "../globalStates";
 
 const states = GM_getValue(scriptId, {
   checkPoint: 0,
@@ -28,26 +29,43 @@ export function setTopicStates(value) {
   states.topics = value;
   GM_setValue(scriptId, states);
 }
-export async function fetchStates() {
-  if (getCheckPoint() > endTimeStamp) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(getTopicStates());
+export async function fetchStates(userId) {
+  const isOwner = !userId || userId === getUserId();
+  let topicStats;
+
+  if (isOwner) {
+    if (getCheckPoint() > endTimeStamp) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          resolve(getTopicStates());
+        });
       });
+    }
+    const dailyTopics = await requestShortMsgTopic();
+    topicStats = generateTopicStats(dailyTopics);
+    setTopicStates(topicStats);
+  } else {
+    const dailyTopics = await requestShortMsgTopic("0", [], {
+      user_id: userId,
     });
+    topicStats = generateTopicStats(dailyTopics);
   }
 
-  const dailyTopics = await requestShortMsgTopic();
-  updateGlobalStates(dailyTopics);
+  return topicStats;
 }
 
-function requestShortMsgTopic(cursor = "0", dailyTopics = []) {
+function requestShortMsgTopic(
+  cursor = "0",
+  dailyTopics = [],
+  requestData = {}
+) {
   return fetchData({
     url: "https://api.juejin.cn/content_api/v1/short_msg/query_list",
     data: {
       sort_type: 4,
       limit: 24,
       cursor,
+      ...requestData,
     },
   }).then((responseData) => {
     const { data, cursor, has_more } = responseData;
@@ -85,14 +103,14 @@ function requestShortMsgTopic(cursor = "0", dailyTopics = []) {
     }
 
     if (lastPublishTime > startTimeStamp && has_more) {
-      return requestShortMsgTopic(cursor, dailyTopics);
+      return requestShortMsgTopic(cursor, dailyTopics, requestData);
     } else {
       return dailyTopics;
     }
   });
 }
 
-function updateGlobalStates(dailyTopics) {
+function generateTopicStats(dailyTopics) {
   const allEfficientTopicTitles = new Set();
   const topicCountAndVerified = {};
   const todayIndex = Math.floor(
@@ -141,7 +159,7 @@ function updateGlobalStates(dailyTopics) {
     });
   });
 
-  setTopicStates({
+  return {
     todayEfficientTopicTitles,
     efficientDays,
     efficientTopics: Object.fromEntries(
@@ -149,5 +167,5 @@ function updateGlobalStates(dailyTopics) {
         return [title, topicCountAndVerified[title]];
       })
     ),
-  });
+  };
 }

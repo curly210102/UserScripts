@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://gitee.com/curlly-brackets/UserScripts
-// @version      0.1.6.7
+// @version      0.1.6.8
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -10,6 +10,7 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_registerMenuCommand
 // @run-at       document-end
 // @supportURL   https://gitee.com/curlly-brackets/UserScripts/issues
 // @updateURL    https://gitee.com/curlly-brackets/UserScripts/raw/gitee/Juejin_Enhancer/Juejin_activities.user.js

@@ -6,8 +6,16 @@ export const inPinPage = (pathname) => {
   return /^\/pins(?:\/|$)/.test(pathname);
 };
 
-export const inProfilePage = (pathname) => {
+export const inSelfProfilePage = (pathname) => {
   return new RegExp(`^\\/user\\/${getUserId()}(?:\\/|$)`).test(pathname);
+};
+
+export const inProfilePage = (pathname) => {
+  return /\/user\/(\d+)(?:\/|$)/.test(pathname);
+};
+
+export const getUserIdFromPathName = (pathname) => {
+  return pathname.match(/\/user\/(\d+)(?:\/|$)/)?.[1];
 };
 
 export function fetchData({ url, data = {} }) {
@@ -65,6 +73,7 @@ class ProfileStatRender {
 
   add(data) {
     const now = new Date().valueOf();
+    this.data = this.data.filter(({ id }) => id !== data.id);
     this.data.push(data);
     this.data.sort((a, b) => {
       const isFinishA = a.endTime > now;

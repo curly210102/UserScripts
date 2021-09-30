@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://gitee.com/curlly-brackets/UserScripts
-// @version      0.1.6.7
+// @version      0.1.6.8
 // @description  Enhances Juejin activities
 // @author       curly brackets
 // @match        https://juejin.cn/*
@@ -10,6 +10,7 @@
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setValue
 // @grant        GM_getValue
+// @grant        GM_registerMenuCommand
 // @run-at       document-end
 // @supportURL   https://gitee.com/curlly-brackets/UserScripts/issues
 // @updateURL    https://gitee.com/curlly-brackets/UserScripts/raw/gitee/Juejin_Enhancer/Juejin_activities.user.js
@@ -1368,7 +1369,7 @@
 		"掘金官方",
 		"上班摸鱼"
 	];
-	var scriptId$1 = "juejin-activies-enhancer/break-the-circle";
+	var scriptId$2 = "juejin-activies-enhancer/break-the-circle";
 	var startTimeStamp = "1632326400000";
 	var endTimeStamp = "1633017600000";
 
@@ -1382,12 +1383,20 @@
 	  states$1.userId = userId;
 	}
 
-	const scriptId = "juejin-activies-enhancer";
+	const scriptId$1 = "juejin-activies-enhancer";
 	const inPinPage = pathname => {
 	  return /^\/pins(?:\/|$)/.test(pathname);
 	};
-	const inProfilePage = pathname => {
+	const inSelfProfilePage = pathname => {
 	  return new RegExp(`^\\/user\\/${getUserId()}(?:\\/|$)`).test(pathname);
+	};
+	const inProfilePage = pathname => {
+	  return /\/user\/(\d+)(?:\/|$)/.test(pathname);
+	};
+	const getUserIdFromPathName = pathname => {
+	  var _pathname$match;
+
+	  return (_pathname$match = pathname.match(/\/user\/(\d+)(?:\/|$)/)) === null || _pathname$match === void 0 ? void 0 : _pathname$match[1];
 	};
 	function fetchData({
 	  url,
@@ -1428,7 +1437,7 @@
 	class ProfileStatRender {
 	  constructor() {
 	    const blockEl = document.createElement("div");
-	    blockEl.dataset.tampermonkey = scriptId;
+	    blockEl.dataset.tampermonkey = scriptId$1;
 	    blockEl.className = "block shadow";
 	    blockEl.style = `margin-bottom: 1rem;background-color: #fff;border-radius: 2px;`;
 	    const titleEl = document.createElement("div");
@@ -1449,6 +1458,9 @@
 
 	  add(data) {
 	    const now = new Date().valueOf();
+	    this.data = this.data.filter(({
+	      id
+	    }) => id !== data.id);
 	    this.data.push(data);
 	    this.data.sort((a, b) => {
 	      const isFinishA = a.endTime > now;
@@ -1488,7 +1500,7 @@
 	      if (siblingEl) {
 	        var _siblingEl$parentElem;
 
-	        (_siblingEl$parentElem = siblingEl.parentElement.querySelector(`[data-tampermonkey='${scriptId}']`)) === null || _siblingEl$parentElem === void 0 ? void 0 : _siblingEl$parentElem.remove();
+	        (_siblingEl$parentElem = siblingEl.parentElement.querySelector(`[data-tampermonkey='${scriptId$1}']`)) === null || _siblingEl$parentElem === void 0 ? void 0 : _siblingEl$parentElem.remove();
 	        siblingEl.after(this.blockEl);
 	        return;
 	      }
@@ -1496,7 +1508,7 @@
 	      if (parentEl) {
 	        var _parentEl$querySelect;
 
-	        (_parentEl$querySelect = parentEl.querySelector(`[data-tampermonkey='${scriptId}']`)) === null || _parentEl$querySelect === void 0 ? void 0 : _parentEl$querySelect.remove();
+	        (_parentEl$querySelect = parentEl.querySelector(`[data-tampermonkey='${scriptId$1}']`)) === null || _parentEl$querySelect === void 0 ? void 0 : _parentEl$querySelect.remove();
 	        parentEl.firstChild ? parentEl.insertBefore(this.blockEl, parentEl.firstChild) : parentEl.appendChild(this.blockEl);
 	      }
 	    }
@@ -1506,7 +1518,7 @@
 
 	const profileStateRender = new ProfileStatRender();
 
-	const states = GM_getValue(scriptId$1, {
+	const states = GM_getValue(scriptId$2, {
 	  checkPoint: 0,
 	  topics: {
 	    todayEfficientTopicTitles: [],
@@ -1525,28 +1537,42 @@
 	function setTopicStates(value) {
 	  states.checkPoint = new Date().valueOf();
 	  states.topics = value;
-	  GM_setValue(scriptId$1, states);
+	  GM_setValue(scriptId$2, states);
 	}
-	async function fetchStates() {
-	  if (getCheckPoint() > endTimeStamp) {
-	    return new Promise(resolve => {
-	      setTimeout(() => {
-	        resolve(getTopicStates());
+	async function fetchStates(userId) {
+	  const isOwner = !userId || userId === getUserId();
+	  let topicStats;
+
+	  if (isOwner) {
+	    if (getCheckPoint() > endTimeStamp) {
+	      return new Promise(resolve => {
+	        setTimeout(() => {
+	          resolve(getTopicStates());
+	        });
 	      });
+	    }
+
+	    const dailyTopics = await requestShortMsgTopic();
+	    topicStats = generateTopicStats(dailyTopics);
+	    setTopicStates(topicStats);
+	  } else {
+	    const dailyTopics = await requestShortMsgTopic("0", [], {
+	      user_id: userId
 	    });
+	    topicStats = generateTopicStats(dailyTopics);
 	  }
 
-	  const dailyTopics = await requestShortMsgTopic();
-	  updateGlobalStates(dailyTopics);
+	  return topicStats;
 	}
 
-	function requestShortMsgTopic(cursor = "0", dailyTopics = []) {
+	function requestShortMsgTopic(cursor = "0", dailyTopics = [], requestData = {}) {
 	  return fetchData({
 	    url: "https://api.juejin.cn/content_api/v1/short_msg/query_list",
 	    data: {
 	      sort_type: 4,
 	      limit: 24,
-	      cursor
+	      cursor,
+	      ...requestData
 	    }
 	  }).then(responseData => {
 	    const {
@@ -1587,14 +1613,14 @@
 	    }
 
 	    if (lastPublishTime > startTimeStamp && has_more) {
-	      return requestShortMsgTopic(cursor, dailyTopics);
+	      return requestShortMsgTopic(cursor, dailyTopics, requestData);
 	    } else {
 	      return dailyTopics;
 	    }
 	  });
 	}
 
-	function updateGlobalStates(dailyTopics) {
+	function generateTopicStats(dailyTopics) {
 	  const allEfficientTopicTitles = new Set();
 	  const topicCountAndVerified = {};
 	  const todayIndex = Math.floor((new Date().valueOf() - startTimeStamp) / 86400000);
@@ -1648,13 +1674,13 @@
 	      }
 	    });
 	  });
-	  setTopicStates({
+	  return {
 	    todayEfficientTopicTitles,
 	    efficientDays,
 	    efficientTopics: Object.fromEntries([...allEfficientTopicTitles].map(title => {
 	      return [title, topicCountAndVerified[title]];
 	    }))
-	  });
+	  };
 	}
 
 	function renderPinPage() {
@@ -1666,26 +1692,27 @@
 	    return;
 	  }
 
-	  (_containerEl$querySel = containerEl.querySelector(`[data-tampermonkey='${scriptId$1}']`)) === null || _containerEl$querySel === void 0 ? void 0 : _containerEl$querySel.remove();
+	  (_containerEl$querySel = containerEl.querySelector(`[data-tampermonkey='${scriptId$2}']`)) === null || _containerEl$querySel === void 0 ? void 0 : _containerEl$querySel.remove();
 	  const wrapperEl = document.createElement("div");
-	  wrapperEl.dataset.tampermonkey = scriptId$1;
+	  wrapperEl.dataset.tampermonkey = scriptId$2;
 	  wrapperEl.appendChild(getRewardElement());
 	  wrapperEl.style = "padding-top:20px;";
 	  containerEl.appendChild(wrapperEl);
 	}
-	function renderProfilePage() {
+	function renderProfilePage(topicStates) {
 	  profileStateRender.add({
+	    id: scriptId$2,
 	    startTime: new Date(startTimeStamp),
 	    endTime: new Date(endTimeStamp),
-	    node: getRewardElement()
+	    node: getRewardElement(topicStates)
 	  });
 	}
 
-	function getRewardElement() {
+	function getRewardElement(topicStates = getTopicStates()) {
 	  const {
 	    efficientTopics,
 	    efficientDays
-	  } = getTopicStates();
+	  } = topicStates;
 	  const topicCount = Object.values(efficientTopics).filter(({
 	    verified
 	  }) => !!verified).length;
@@ -1807,13 +1834,13 @@
 	    efficientTopics
 	  } = getTopicStates();
 	  if (!itemEl || !(itemEl.nodeType === 1 && itemEl.nodeName === "DIV" && itemEl.classList.contains("item")) || !((_itemEl$parentElement = itemEl.parentElement) !== null && _itemEl$parentElement !== void 0 && _itemEl$parentElement.classList.contains("contents")) && !((_itemEl$parentElement2 = itemEl.parentElement) !== null && _itemEl$parentElement2 !== void 0 && _itemEl$parentElement2.classList.contains("searchlist"))) return;
-	  (_itemEl$querySelector = itemEl.querySelector(`[data-tampermonkey='${scriptId$1}']`)) === null || _itemEl$querySelector === void 0 ? void 0 : _itemEl$querySelector.remove();
+	  (_itemEl$querySelector = itemEl.querySelector(`[data-tampermonkey='${scriptId$2}']`)) === null || _itemEl$querySelector === void 0 ? void 0 : _itemEl$querySelector.remove();
 	  const title = (_itemEl$querySelector2 = itemEl.querySelector(".content_main > .title")) === null || _itemEl$querySelector2 === void 0 ? void 0 : _itemEl$querySelector2.textContent;
 	  const isBlockedTopic = blockTopics.includes(title);
 	  const count = (_efficientTopics$titl = efficientTopics[title]) === null || _efficientTopics$titl === void 0 ? void 0 : _efficientTopics$titl.count;
 	  const verified = (_efficientTopics$titl2 = efficientTopics[title]) === null || _efficientTopics$titl2 === void 0 ? void 0 : _efficientTopics$titl2.verified;
 	  const iconEl = document.createElement("div");
-	  iconEl.dataset.tampermonkey = scriptId$1;
+	  iconEl.dataset.tampermonkey = scriptId$2;
 
 	  if (count) {
 	    iconEl.style = `width: 18px;
@@ -1877,18 +1904,47 @@
 	  itemEl.appendChild(iconEl);
 	}
 
+	const scriptId = "juejin-activies-enhancer";
+	const configs = GM_getValue(scriptId, {
+	  __debug_enable__: false
+	});
+	GM_registerMenuCommand("切换调试模式", () => {
+	  configs.__debug_enable__ = !configs.__debug_enable__;
+	  GM_setValue(scriptId, configs);
+	});
+	const isDebugEnable = () => {
+	  return configs.__debug_enable__;
+	};
+
 	function onRouteChange$1(prevRouterPathname, currentRouterPathname) {
 	  if (inPinPage(currentRouterPathname) && !inPinPage(prevRouterPathname)) {
 	    fetchStates().then(() => {
 	      renderTopicSelectMenu(document);
 	      renderPinPage();
 	    });
-	  } else if (inProfilePage(currentRouterPathname) && !inProfilePage(prevRouterPathname)) {
+	    return;
+	  }
+
+	  if (inSelfProfilePage(currentRouterPathname) && !inSelfProfilePage(prevRouterPathname)) {
 	    fetchStates().then(() => {
 	      setTimeout(() => {
 	        renderProfilePage();
 	      }, 1000);
 	    });
+	    return;
+	  }
+
+	  if (isDebugEnable() && inProfilePage(currentRouterPathname)) {
+	    const prevUserId = getUserIdFromPathName(prevRouterPathname);
+	    const currentUserId = getUserIdFromPathName(currentRouterPathname);
+
+	    if (currentUserId !== prevUserId) {
+	      fetchStates(currentUserId).then(topicStats => {
+	        setTimeout(() => {
+	          renderProfilePage(topicStats);
+	        }, 1000);
+	      });
+	    }
 	  }
 	}
 

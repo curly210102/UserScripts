@@ -1,7 +1,13 @@
 import { renderPinPage, renderProfilePage } from "./renderStats";
 import { renderTopicSelectMenu } from "./renderMenuSelect";
 import { fetchStates } from "./states";
-import { inPinPage, inProfilePage } from "../utils";
+import {
+  getUserIdFromPathName,
+  inPinPage,
+  inProfilePage,
+  inSelfProfilePage,
+} from "../utils";
+import { isDebugEnable } from "../userConfigs";
 
 function onRouteChange(prevRouterPathname, currentRouterPathname) {
   if (inPinPage(currentRouterPathname) && !inPinPage(prevRouterPathname)) {
@@ -9,15 +15,31 @@ function onRouteChange(prevRouterPathname, currentRouterPathname) {
       renderTopicSelectMenu(document);
       renderPinPage();
     });
-  } else if (
-    inProfilePage(currentRouterPathname) &&
-    !inProfilePage(prevRouterPathname)
+    return;
+  }
+
+  if (
+    inSelfProfilePage(currentRouterPathname) &&
+    !inSelfProfilePage(prevRouterPathname)
   ) {
     fetchStates().then(() => {
       setTimeout(() => {
         renderProfilePage();
       }, 1000);
     });
+    return;
+  }
+
+  if (isDebugEnable() && inProfilePage(currentRouterPathname)) {
+    const prevUserId = getUserIdFromPathName(prevRouterPathname);
+    const currentUserId = getUserIdFromPathName(currentRouterPathname);
+    if (currentUserId !== prevUserId) {
+      fetchStates(currentUserId).then((topicStats) => {
+        setTimeout(() => {
+          renderProfilePage(topicStats);
+        }, 1000);
+      });
+    }
   }
 }
 
