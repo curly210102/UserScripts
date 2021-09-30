@@ -1556,31 +1556,33 @@
 	    } = responseData;
 	    let lastPublishTime = Infinity;
 
-	    for (const msg of data) {
-	      const {
-	        topic,
-	        msg_Info
-	      } = msg;
-	      const publishTime = msg_Info.ctime * 1000;
+	    if (data) {
+	      for (const msg of data) {
+	        const {
+	          topic,
+	          msg_Info
+	        } = msg;
+	        const publishTime = msg_Info.ctime * 1000;
 
-	      if (publishTime > startTimeStamp && publishTime < endTimeStamp && !blockTopics.includes(topic.title)) {
-	        const day = Math.floor((publishTime - startTimeStamp) / 86400000);
+	        if (publishTime > startTimeStamp && publishTime < endTimeStamp && !blockTopics.includes(topic.title)) {
+	          const day = Math.floor((publishTime - startTimeStamp) / 86400000);
 
-	        if (!dailyTopics[day]) {
-	          dailyTopics[day] = [];
+	          if (!dailyTopics[day]) {
+	            dailyTopics[day] = [];
+	          }
+
+	          dailyTopics[day].push({
+	            title: topic.title,
+	            // wait: 0, pass: 1, fail: 2
+	            verified: msg_Info.verify_status === 0 ? 0 : msg_Info.audit_status === 2 && msg_Info.verify_status === 1 ? 1 : 2
+	          });
 	        }
 
-	        dailyTopics[day].push({
-	          title: topic.title,
-	          // wait: 0, pass: 1, fail: 2
-	          verified: msg_Info.verify_status === 0 ? 0 : msg_Info.audit_status === 2 && msg_Info.verify_status === 1 ? 1 : 2
-	        });
-	      }
+	        lastPublishTime = publishTime;
 
-	      lastPublishTime = publishTime;
-
-	      if (publishTime < startTimeStamp) {
-	        break;
+	        if (publishTime < startTimeStamp) {
+	          break;
+	        }
 	      }
 	    }
 
