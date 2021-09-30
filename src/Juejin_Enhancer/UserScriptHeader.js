@@ -11,8 +11,8 @@
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @run-at       document-end
-// @supportURL   https://gitee.com/curlly-brackets/UserScripts/issues
-// @updateURL    https://gitee.com/curlly-brackets/UserScripts/raw/gitee/Juejin_Enhancer/Juejin_activities.user.js
-// @downloadURL  https://gitee.com/curlly-brackets/UserScripts/raw/gitee/Juejin_Enhancer/Juejin_activities.user.js
+// @supportURL   https://github.com/curly210102/UserScripts/issues
+// @updateURL    https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
+// @downloadURL  https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
 // @connect      juejin.cn
 // ==/UserScript==
