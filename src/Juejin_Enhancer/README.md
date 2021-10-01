@@ -15,12 +15,12 @@ _2021-09-24 - 2021-10-31_
 
 <table>
 <tr>
-<td><img src="./resources/tips.png"/></td>
+<td><img src="https://gitee.com/curlly-brackets/UserScripts/raw/gitee/src/Juejin_Enhancer/resources/tips.png"/></td>
 <td>
-<img src="./resources/tips2.png" />
+<img src="https://gitee.com/curlly-brackets/UserScripts/raw/gitee/src/Juejin_Enhancer/resources/tips2.png" />
 </td>
 <td>
-<img src="./resources/tips1.png" />
+<img src="https://gitee.com/curlly-brackets/UserScripts/raw/gitee/src/Juejin_Enhancer/resources/tips1.png" />
 </td>
 </tr>
 </table>
@@ -35,18 +35,18 @@ _2021-09-23 - 2021-09-30_
 <table>
 <tr>
 <td>
-<img src="./resources/bc-menu1.png" />
+<img src="https://gitee.com/curlly-brackets/UserScripts/raw/gitee/src/Juejin_Enhancer/resources/bc-menu1.png" />
 </td>
 <td>
-<img src="./resources/bc-menu2.png" />
+<img src="https://gitee.com/curlly-brackets/UserScripts/raw/gitee/src/Juejin_Enhancer/resources/bc-menu2.png" />
 </td>
 </tr>
 <tr>
 <td>
-<img src="./resources/bc-pins.png" />
+<img src="https://gitee.com/curlly-brackets/UserScripts/raw/gitee/src/Juejin_Enhancer/resources/bc-pins.png" />
 </td>
 <td>
-<img src="./resources/bc-profile.png" />
+<img src="https://gitee.com/curlly-brackets/UserScripts/raw/gitee/src/Juejin_Enhancer/resources/bc-profile.png" />
 </td>
 </tr>
 </table>
