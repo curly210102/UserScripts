@@ -1,34 +1,233 @@
-// 9 月 24 日 - 10 月 31 日 “程序员必懂小知识”
+import {
+  fetchData,
+  inProfilePage,
+  getFromStorage,
+  saveToStorage,
+  inCreatorPage,
+  inSelfProfilePage,
+  getUserIdFromPathName,
+} from "../utils";
+import { tips, star, activityId } from "./static.json";
+import wordCount from "word-count";
+import renderTipState from "./renderTips";
+import renderStarState from "./renderStar";
+import { isDebugEnable } from "../userConfigs";
+import nm from "nomatter";
 
-// 要求：选题具体、内容实用、有趣最好
-// 分类：前端、后端、Android、iOS、人工智能
-// 暗号：小知识，大挑战！本文正在参与“[程序员必备小知识](https://juejin.cn/post/7008476801634680869)”创作活动。
-// 字数不少于 400 字
+const articleContentMap = new Map(
+  Object.entries(getFromStorage(`${activityId}/article_contents`) ?? [])
+);
 
-// 2 篇：青铜
-// 4 篇 白银
-// 8 篇 黄金
-// 16 篇，更文天数 >= 7 钻石
-// 32 篇，更文天数 >= 14 精英
+async function fetchArticleList(requestData = {}) {
+  return await request();
+  function request(cursor = "0", articles = []) {
+    return fetchData({
+      url: "https://api.juejin.cn/content_api/v1/article/query_list",
+      data: { sort_type: 2, cursor, ...requestData },
+    }).then(({ data, has_more, cursor, count }) => {
+      let lastPublishTime = Infinity;
+      const startTimeStamp = Math.min(tips.startTimeStamp, star.startTimeStamp);
+      const endTimeStamp = Math.max(tips.endTimeStamp, star.endTimeStamp);
+      const categories = new Set([...tips.categories, ...star.categories]);
+      if (data) {
+        for (const article of data) {
+          const { article_id, article_info, category } = article;
+          // 文章字数、内容、发布时间、评论、点赞、收藏、阅读数
+          const {
+            ctime,
+            mtime,
+            audit_status,
+            verify_status,
+            view_count,
+            collect_count,
+            digg_count,
+            comment_count,
+          } = article_info;
+          const { category_name } = category;
+          const publishTime = new Date(ctime * 1000);
+          const modifiedTime = new Date(mtime * 1000);
+          const verify =
+            verify_status === 0
+              ? 0
+              : audit_status === 2 && verify_status === 1
+              ? 1
+              : 2;
+          if (
+            publishTime >= startTimeStamp &&
+            publishTime <= endTimeStamp &&
+            categories.has(category_name) &&
+            verify !== 2
+          ) {
+            articles.push({
+              category: category_name,
+              id: article_id,
+              publishTime,
+              modifiedTime,
+              view_count,
+              collect_count,
+              digg_count,
+              comment_count,
+            });
+          }
 
-// 8 篇，幸运陨石奖
+          lastPublishTime = publishTime;
+          if (lastPublishTime < startTimeStamp) {
+            break;
+          }
+        }
+      }
 
-// 综合文章评论、点赞、收藏
+      if (
+        lastPublishTime > startTimeStamp &&
+        has_more &&
+        count !== parseInt(cursor, 10)
+      ) {
+        return request(cursor, articles);
+      } else {
+        return articles;
+      }
+    });
+  }
+}
 
-// 10-1 - 10-31
-// 掘力星计划 - 创作激励金
-// 本文同时参与 「掘力星计划」 ，赢取创作大礼包，挑战创作激励金
-// 分类：前端、后端、iOS、android
-// 需要发布 4 篇，且每篇字数 ≧ 800
+async function fetchArticles(userId) {
+  const articleList = await fetchArticleList(
+    userId
+      ? {
+          user_id: userId,
+        }
+      : {}
+  );
+  const articleDetails = await Promise.all(
+    articleList
+      .filter(({ articleId, modifiedTime }) => {
+        return (
+          !articleContentMap.has(articleId) ||
+          new Date(articleContentMap.get(articleId)["modifiedTimeStamp"]) !==
+            modifiedTime
+        );
+      })
+      .map((article) => {
+        return fetchData({
+          url: "https://api.juejin.cn/content_api/v1/article/detail",
+          data: {
+            article_id: article.id,
+          },
+        });
+      })
+  );
+  articleDetails.forEach(({ data }) => {
+    const { article_info } = data;
+    const { article_id, mark_content, mtime } = article_info;
 
-// 阅读 ≧ 100 的文章 ≧ 2 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条	 创作瓜分奖
-// 阅读 ≧ 100 的文章 ≧ 4 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条 瓜分奖品加倍
-// 阅读 ≧ 100 的文章 ≧ 4 篇，所有投稿文章累计阅读 ≧ 2000，点赞 ≧ 40，评论≧ 10 创作大礼包
+    const content = nm(mark_content).split(/\n+/).slice(0, 2).join("\n").trim();
 
-// 创作激励金候选
+    articleContentMap.set(article_id, {
+      content,
+      count: wordCount(mark_content),
+      modifiedTimeStamp: mtime * 1000,
+    });
+  });
 
-// 文章数量 ≧4 篇，单篇文章阅读 ≧ 500，所有文章阅读量累计 ≧ 3000，点赞 ≧ 60，评论 ≧ 15 300 元
+  saveToStorage(
+    `${activityId}/article_contents`,
+    Object.fromEntries(articleContentMap)
+  );
 
-// 文章数量 ≧4 篇，单篇文章阅读 ≧ 1500，所有文章阅读量累计 ≧ 5000，点赞 ≧ 100，评论 ≧ 25 500 元
+  return articleList.map((article) => {
+    const contentInfo = articleContentMap.get(article.id);
+    return {
+      ...article,
+      content: contentInfo?.content ?? "",
+      count: contentInfo?.count ?? "",
+    };
+  });
+}
 
-// 文章数量 ≧4 篇，单篇文章阅读 ≧ 3000，所有文章阅读量累计 ≧ 10000，点赞 ≧ 200，评论 ≧ 50 800 元
+function generateData(
+  articles,
+  { startTimeStamp, categories, signalRegex, dayLimit }
+) {
+  const startTime = new Date(startTimeStamp);
+  const efficientArticles = articles.filter((article) => {
+    return (
+      article.publishTime > startTime &&
+      categories.includes(article.category) &&
+      article.count >= dayLimit &&
+      signalRegex.test(article.content)
+    );
+  });
+  const publishTimeGroup = [];
+  const totalCount = {
+    view: 0,
+    comment: 0,
+    digg: 0,
+    collect: 0,
+  };
+  efficientArticles.forEach(
+    ({ publishTime, view_count, digg_count, comment_count, collect_count }) => {
+      const day = Math.floor((publishTime - startTime) / (24 * 60 * 60 * 1000));
+      publishTimeGroup[day] = (publishTimeGroup[day] ?? 0) + 1;
+      totalCount.view += view_count;
+      totalCount.digg += digg_count;
+      totalCount.collect += collect_count;
+      totalCount.comment += comment_count;
+    }
+  );
+  const dayCount = publishTimeGroup.filter(Boolean).length;
+
+  return {
+    totalCount,
+    dayCount,
+    efficientArticles,
+  };
+}
+
+function renderActivityTips(articles) {
+  const data = generateData(articles, {
+    ...tips,
+    signalRegex:
+      /小知识，大挑战！本文正在参与“\[程序员必备小知识\]\(https:\/\/juejin\.cn\/post\/7008476801634680869(?:\b[^)]+)?\)”创作活动。/,
+    dayLimit: 400,
+  });
+  renderTipState(data);
+}
+
+function renderActivityStars(articles) {
+  const data = generateData(articles, {
+    ...star,
+    signalRegex:
+      /本文(已|同时)参与「\[掘力星计划\]\(https:\/\/juejin\.cn\/post\/7012210233804079141(?:\b[^)]+)?\)」，赢取创作大礼包，挑战创作激励金。/,
+    dayLimit: 800,
+  });
+  renderStarState(data);
+}
+
+async function renderPage(userId) {
+  const articles = await fetchArticles(userId);
+  renderActivityTips(articles);
+  renderActivityStars(articles);
+}
+
+function onRouteChange(prevRouterPathname, currentRouterPathname) {
+  if (
+    !inSelfProfilePage(prevRouterPathname) &&
+    inSelfProfilePage(currentRouterPathname)
+  ) {
+    renderPage();
+  } else if (
+    !inCreatorPage(prevRouterPathname) &&
+    inCreatorPage(currentRouterPathname)
+  ) {
+  } else if (isDebugEnable() && inProfilePage(currentRouterPathname)) {
+    const prevUserId = getUserIdFromPathName(prevRouterPathname);
+    const currentUserId = getUserIdFromPathName(currentRouterPathname);
+    if (currentUserId !== prevUserId) {
+      renderPage(currentUserId);
+    }
+  }
+}
+
+export default {
+  onRouteChange,
+};

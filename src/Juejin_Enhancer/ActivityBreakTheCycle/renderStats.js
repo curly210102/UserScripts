@@ -18,6 +18,8 @@ export function renderPinPage() {
 export function renderProfilePage(topicStates) {
   profileStateRender.add({
     id: scriptId,
+    title: "破圈行动",
+    link: "https://juejin.cn/pin/7010556755855802376",
     startTime: new Date(startTimeStamp),
     endTime: new Date(endTimeStamp),
     node: getRewardElement(topicStates),
@@ -44,8 +46,7 @@ function getRewardElement(topicStates = getTopicStates()) {
     )
     .join("");
   const rewardEl = document.createElement("div");
-  rewardEl.innerHTML = `<h3 style="margin:0;"><a style="color:inherit" href="https://juejin.cn/pin/7010556755855802376" target="__blank">破圈行动</a> <span style="float:right">9/23 - 9/30</span></h3>
-      <p style="display:flex;flex-direction:row;justify-content: space-between;">
+  rewardEl.innerHTML = `<p style="display:flex;flex-direction:row;justify-content: space-between;">
       ${descriptionHTML}
       </p>
       ${

@@ -1,0 +1,13 @@
+{
+  "tips": {
+    "categories": ["前端", "后端", "Android", "iOS", "人工智能"],
+    "startTimeStamp": 1632412800000,
+    "endTimeStamp": 1635695999999
+  },
+  "star": {
+    "categories": ["前端", "后端", "Android", "iOS"],
+    "startTimeStamp": 1633017600000,
+    "endTimeStamp": 1635695999999
+  },
+  "activityId": "october-posts"
+}

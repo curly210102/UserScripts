@@ -1,21 +1,26 @@
 import BreakTheCycle from "./ActivityBreakTheCycle";
+import OctoberPost from "./ActivityOctoberPost";
 import { setUserId } from "./globalStates";
 
-const activities = [BreakTheCycle];
+const activities = [BreakTheCycle, OctoberPost];
 
 let currentRouterPathname = "";
 
-(function start() {
+function updateUserId() {
   const userProfileEl = document.querySelector(
     ".user-dropdown-list > .nav-menu-item-group:nth-child(2) > .nav-menu-item > a[href]"
   );
-  const userId = userProfileEl?.getAttribute("href").replace(/\/user\//, "");
+  const userId = userProfileEl;
 
   if (!userId) {
     return;
   }
 
   setUserId(userId);
+}
+
+(function start() {
+  updateUserId();
   initRouter();
   activities.forEach(({ onLoaded }) => onLoaded?.());
 })();
