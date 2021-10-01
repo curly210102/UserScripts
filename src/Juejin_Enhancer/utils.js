@@ -1,6 +1,5 @@
 import { getUserId } from "./globalStates";
-
-const scriptId = "juejin-activies-enhancer";
+import { scriptId } from "./static.json";
 
 export const inPinPage = (pathname) => {
   return /^\/pins(?:\/|$)/.test(pathname);
@@ -16,6 +15,31 @@ export const inProfilePage = (pathname) => {
 
 export const getUserIdFromPathName = (pathname) => {
   return pathname.match(/\/user\/(\d+)(?:\/|$)/)?.[1];
+};
+
+export const inCreatorPage = (pathname) => {
+  return /^\/creator(?:\/|$)/.test(pathname);
+};
+
+export const saveToStorage = (name, value) => {
+  GM_setValue(`${scriptId}/${name}`, value);
+};
+
+export const getFromStorage = (name, defaultValue) => {
+  GM_getValue(`${scriptId}/${name}`, defaultValue);
+};
+
+export const formatDate = (dateInstance, format) => {
+  const year = dateInstance.getFullYear();
+  const month = dateInstance.getMonth() + 1;
+  const date = dateInstance.getDate();
+
+  return format
+    .replaceAll("YYYY", year)
+    .replaceAll("MM", `${month}`.padStart(2, "0"))
+    .replaceAll("DD", `${date}`.padStart(2, "0"))
+    .replaceAll("M", month)
+    .replaceAll("D", date);
 };
 
 export function fetchData({ url, data = {} }) {
@@ -59,11 +83,19 @@ class ProfileStatRender {
               font-size: 1.333rem;
               font-weight: 600;
               color: #31445b;
-              border-bottom: 1px solid rgba(230,230,231,.5);`;
+              border-bottom: 1px solid rgba(230,230,231,.5);cursor:pointer;`;
     titleEl.textContent = "活动状态";
+    titleEl.addEventListener("click", () => {
+      const isHidden = contentEl.style.display === "none";
+      contentEl.style.display = isHidden ? "block" : "none";
+      saveToStorage("profile_stat_hidden", isHidden);
+    });
     blockEl.appendChild(titleEl);
     const contentEl = document.createElement("div");
     contentEl.style = `padding: 1.333rem;`;
+    contentEl.style.display = getFromStorage("profile_stat_hidden", false)
+      ? "none"
+      : "block";
     blockEl.appendChild(contentEl);
 
     this.blockEl = blockEl;
@@ -73,8 +105,21 @@ class ProfileStatRender {
 
   add(data) {
     const now = new Date().valueOf();
+    const { node, title, link, startTime, endTime } = data;
+    const header = document.createElement("h3");
+    header.style = "margin:0;";
+    header.innerHTML = `<a style="color:inherit" href="${link}" target="__blank">${title}</a> <span style="float:right">${formatDate(
+      startTime,
+      "MM/DD"
+    )} - ${formatDate(endTime, "MM/DD")}</span>`;
+    node.firstChild
+      ? node.insertBefore(header, node.firstChild)
+      : node.appendChild(header);
+    node.style["padding-bottom"] = "10px";
+    node.style["margin-bottom"] = "20px";
+    node.style["border-bottom"] = "1px solid rgba(230, 230, 231, 0.5)";
     this.data = this.data.filter(({ id }) => id !== data.id);
-    this.data.push(data);
+    this.data.push(node);
     this.data.sort((a, b) => {
       const isFinishA = a.endTime > now;
       const isFinishB = b.endTime > now;
@@ -90,15 +135,12 @@ class ProfileStatRender {
   render() {
     const container = this.contentEl;
     const currentDOM = container.children;
-    this.data.forEach(({ node }, index) => {
+    this.data.forEach((node, index) => {
       const element = currentDOM[index];
 
       if (!element) {
         container.appendChild(node);
-        return;
-      }
-
-      if (element !== node) {
+      } else if (element !== node) {
         element.replaceWith(node);
       }
     });
@@ -108,17 +150,22 @@ class ProfileStatRender {
     }
 
     if (!this.blockEl.isConnected) {
-      const siblingEl = document.querySelector(".user-view .stat-block");
+      this.mounted = true;
+      const siblingEl = document.querySelector(".user-view .follow-block");
       const parentEl = document.querySelector(".user-view .sticky-wrap");
+
+      if (parentEl) {
+        parentEl.style.overflow = "auto";
+        parentEl.style.height = "calc(100vh - 8rem)";
+        parentEl.style["padding-right"] = "16px";
+      }
 
       if (siblingEl) {
         siblingEl.parentElement
           .querySelector(`[data-tampermonkey='${scriptId}']`)
           ?.remove();
         siblingEl.after(this.blockEl);
-        return;
-      }
-      if (parentEl) {
+      } else if (parentEl) {
         parentEl.querySelector(`[data-tampermonkey='${scriptId}']`)?.remove();
         parentEl.firstChild
           ? parentEl.insertBefore(this.blockEl, parentEl.firstChild)

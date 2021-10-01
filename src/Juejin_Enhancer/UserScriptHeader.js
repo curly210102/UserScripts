@@ -2,8 +2,9 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动辅助工具
 // @namespace    https://gitee.com/curlly-brackets/UserScripts
-// @version      0.1.6.8
+// @version      0.1.7.0
 // @description  Enhances Juejin activities
+// @description:zh-CN   跟进掘金活动，提供进度追踪、统计等辅助功能
 // @author       curly brackets
 // @match        https://juejin.cn/*
 // @license      MIT License

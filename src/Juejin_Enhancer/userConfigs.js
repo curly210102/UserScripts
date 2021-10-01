@@ -1,4 +1,4 @@
-const scriptId = "juejin-activies-enhancer";
+import { scriptId } from "./static.json";
 const configs = GM_getValue(scriptId, {
   __debug_enable__: false,
 });

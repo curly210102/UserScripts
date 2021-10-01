@@ -1,9 +1,10 @@
 import { babel } from "@rollup/plugin-babel";
 import resolve from "@rollup/plugin-node-resolve";
 import commonjs from "@rollup/plugin-commonjs";
+import image from "@rollup/plugin-image";
 import path from "path";
 import fs from "fs";
-import json from '@rollup/plugin-json';
+import json from "@rollup/plugin-json";
 
 export default [
   {
@@ -28,6 +29,7 @@ export default [
           path.join(input, "../", "UserScriptHeader.js"),
           "utf-8"
         ),
+        inlineDynamicImports: true,
       },
       ...output,
     },
@@ -39,6 +41,7 @@ export default [
         babelHelpers: "bundled",
         exclude: "node_modules/**",
       }),
+      image(),
     ],
   };
 });
