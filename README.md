@@ -4,39 +4,9 @@
 
 ## Juejin Activities Enhancer (掘金活动辅助工具)
 
-目前已支持：
+跟进掘金上线的活动，提供进度追踪、数据统计、操作辅助等功能。
 
-- 沸点「破圈行动」
-
-### 沸点「破圈行动」
-
-- 在圈子菜单中显示破解状态；
-- 在沸点页和个人主页展示当前达成情况和奖项
-
-<table>
-<tr>
-<td>
-<img src="./resources/bc-menu1.png" />
-</td>
-<td>
-<img src="./resources/bc-menu2.png" />
-</td>
-</tr>
-<tr>
-<td>
-<img src="./resources/bc-pins.png" />
-</td>
-<td>
-<img src="./resources/bc-profile.png" />
-</td>
-</tr>
-</table>
-
-### TODO
-
-- [ ] 接入 Babel
-- [ ] 接入 ESLint 或 TypeScript
-- [ ] 支持 “程序员必懂小知识” 活动
+[👉 详细介绍](./src/Juejin_Enhancer/README.md)
 
 ## Ebook Assistant (豆瓣读书助手)
 
