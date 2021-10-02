@@ -187,7 +187,7 @@ function renderActivityTips(articles) {
   const data = generateData(articles, {
     ...tips,
     signalRegex:
-      /小知识，大挑战！本文正在参与“\[程序员必备小知识\]\(https:\/\/juejin\.cn\/post\/7008476801634680869(?:\b[^)]+)?\)”创作活动。/,
+      /小知识，大挑战！本文正在参与“\[程序员必备小知识\]\(https:\/\/juejin\.cn\/post\/7008476801634680869(?:\b[^)]+)?\)”创作活动/,
     dayLimit: 400,
   });
   renderTipState(data);
@@ -197,7 +197,7 @@ function renderActivityStars(articles) {
   const data = generateData(articles, {
     ...star,
     signalRegex:
-      /本文(已|同时)参与「\[掘力星计划\]\(https:\/\/juejin\.cn\/post\/7012210233804079141(?:\b[^)]+)?\)」，赢取创作大礼包，挑战创作激励金。/,
+      /本文(已|同时)参与「\[掘力星计划\]\(https:\/\/juejin\.cn\/post\/7012210233804079141(?:\b[^)]+)?\)」，赢取创作大礼包，挑战创作激励金/,
     dayLimit: 800,
   });
   renderStarState(data);

@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动小助手
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.7.0
+// @version      0.1.7.1
 // @description  Enhances Juejin activities
 // @description:zh-CN   跟进掘金上线的活动，提供进度追踪、数据统计、操作辅助等功能。
 // @author       curly brackets
@@ -58,7 +58,7 @@
   const getUserIdFromPathName = pathname => {
     var _pathname$match;
 
-    return (_pathname$match = pathname.match(/\/user\/(\d+)(?:\/|$)/)) === null || _pathname$match === void 0 ? void 0 : _pathname$match[1];
+    return pathname === null || pathname === void 0 ? void 0 : (_pathname$match = pathname.match(/\/user\/(\d+)(?:\/|$)/)) === null || _pathname$match === void 0 ? void 0 : _pathname$match[1];
   };
   const inCreatorPage = pathname => {
     return /^\/creator(?:\/|$)/.test(pathname);
@@ -1150,7 +1150,7 @@
 
   function renderActivityTips(articles) {
     const data = generateData(articles, { ...tips,
-      signalRegex: /小知识，大挑战！本文正在参与“\[程序员必备小知识\]\(https:\/\/juejin\.cn\/post\/7008476801634680869(?:\b[^)]+)?\)”创作活动。/,
+      signalRegex: /小知识，大挑战！本文正在参与“\[程序员必备小知识\]\(https:\/\/juejin\.cn\/post\/7008476801634680869(?:\b[^)]+)?\)”创作活动/,
       dayLimit: 400
     });
     renderTipState(data);
@@ -1158,7 +1158,7 @@
 
   function renderActivityStars(articles) {
     const data = generateData(articles, { ...star,
-      signalRegex: /本文(已|同时)参与「\[掘力星计划\]\(https:\/\/juejin\.cn\/post\/7012210233804079141(?:\b[^)]+)?\)」，赢取创作大礼包，挑战创作激励金。/,
+      signalRegex: /本文(已|同时)参与「\[掘力星计划\]\(https:\/\/juejin\.cn\/post\/7012210233804079141(?:\b[^)]+)?\)」，赢取创作大礼包，挑战创作激励金/,
       dayLimit: 800
     });
     renderStarState(data);
@@ -1192,7 +1192,7 @@
 
   function updateUserId() {
     const userProfileEl = document.querySelector(".user-dropdown-list > .nav-menu-item-group:nth-child(2) > .nav-menu-item > a[href]");
-    const userId = userProfileEl;
+    const userId = getUserIdFromPathName(userProfileEl === null || userProfileEl === void 0 ? void 0 : userProfileEl.getAttribute("href"));
 
     if (!userId) {
       return;

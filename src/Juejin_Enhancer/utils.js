@@ -14,7 +14,7 @@ export const inProfilePage = (pathname) => {
 };
 
 export const getUserIdFromPathName = (pathname) => {
-  return pathname.match(/\/user\/(\d+)(?:\/|$)/)?.[1];
+  return pathname?.match(/\/user\/(\d+)(?:\/|$)/)?.[1];
 };
 
 export const inCreatorPage = (pathname) => {

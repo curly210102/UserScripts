@@ -1,6 +1,7 @@
 import BreakTheCycle from "./ActivityBreakTheCycle";
 import OctoberPost from "./ActivityOctoberPost";
 import { setUserId } from "./globalStates";
+import { getUserIdFromPathName } from "./utils";
 
 const activities = [BreakTheCycle, OctoberPost];
 
@@ -10,7 +11,7 @@ function updateUserId() {
   const userProfileEl = document.querySelector(
     ".user-dropdown-list > .nav-menu-item-group:nth-child(2) > .nav-menu-item > a[href]"
   );
-  const userId = userProfileEl;
+  const userId = getUserIdFromPathName(userProfileEl?.getAttribute("href"));
 
   if (!userId) {
     return;
