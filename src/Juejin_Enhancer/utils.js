@@ -1,5 +1,6 @@
 import { getUserId } from "./globalStates";
 import { scriptId } from "./static.json";
+import { isDevMode } from "./userConfigs";
 
 export const inPinPage = (pathname) => {
   return /^\/pins(?:\/|$)/.test(pathname);
@@ -19,6 +20,22 @@ export const getUserIdFromPathName = (pathname) => {
 
 export const inCreatorPage = (pathname) => {
   return /^\/creator(?:\/|$)/.test(pathname);
+};
+
+export const calcMathPower = (number) => {
+  let power = 0;
+  while (number > 1) {
+    power++;
+    number >>= 1;
+  }
+
+  return power;
+};
+
+export const debugLog = (...args) => {
+  if (isDevMode()) {
+    console.log.apply(null, args);
+  }
 };
 
 export const saveToStorage = (name, value) => {

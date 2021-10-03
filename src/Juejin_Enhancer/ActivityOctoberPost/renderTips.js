@@ -1,4 +1,4 @@
-import { profileStateRender } from "../utils";
+import { profileStateRender, calcMathPower } from "../utils";
 import { tips } from "./static.json";
 
 import level0Icon from "./badges/level0.svg";
@@ -22,7 +22,7 @@ import unluckyIcon from "./badges/unlucky.svg";
 export default ({ efficientArticles, dayCount, totalCount }) => {
   const articleCount = efficientArticles.length;
   const containerEl = document.createElement("div");
-  let level = Math.min(Math.floor(efficientArticles.length / 2), 5);
+  let level = Math.min(calcMathPower(efficientArticles.length), 5);
   if (level === 5 && dayCount < 14) level--;
   if (level === 4 && dayCount < 7) level--;
 

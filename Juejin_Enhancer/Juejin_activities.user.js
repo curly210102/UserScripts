@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动小助手
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.7.1
+// @version      0.1.7.2
 // @description  Enhances Juejin activities
 // @description:zh-CN   跟进掘金上线的活动，提供进度追踪、数据统计、操作辅助等功能。
 // @author       curly brackets
@@ -46,6 +46,21 @@
 
   var scriptId = "juejin-activies-enhancer";
 
+  const configs = GM_getValue(scriptId, {
+    __debug_enable__: false,
+    __is_dev_mode__: false
+  });
+  GM_registerMenuCommand("切换调试模式", () => {
+    configs.__debug_enable__ = !configs.__debug_enable__;
+    GM_setValue(scriptId, configs);
+  });
+  const isDebugEnable = () => {
+    return configs.__debug_enable__;
+  };
+  const isDevMode = () => {
+    return isDebugEnable() && configs.__is_dev_mode__;
+  };
+
   const inPinPage = pathname => {
     return /^\/pins(?:\/|$)/.test(pathname);
   };
@@ -62,6 +77,21 @@
   };
   const inCreatorPage = pathname => {
     return /^\/creator(?:\/|$)/.test(pathname);
+  };
+  const calcMathPower = number => {
+    let power = 0;
+
+    while (number > 1) {
+      power++;
+      number >>= 1;
+    }
+
+    return power;
+  };
+  const debugLog = (...args) => {
+    if (isDevMode()) {
+      console.log.apply(null, args);
+    }
   };
   const saveToStorage = (name, value) => {
     GM_setValue(`${scriptId}/${name}`, value);
@@ -601,17 +631,6 @@
     itemEl.appendChild(iconEl);
   }
 
-  const configs = GM_getValue(scriptId, {
-    __debug_enable__: false
-  });
-  GM_registerMenuCommand("切换调试模式", () => {
-    configs.__debug_enable__ = !configs.__debug_enable__;
-    GM_setValue(scriptId, configs);
-  });
-  const isDebugEnable = () => {
-    return configs.__debug_enable__;
-  };
-
   function onRouteChange$2(prevRouterPathname, currentRouterPathname) {
     if (inPinPage(currentRouterPathname) && !inPinPage(prevRouterPathname)) {
       fetchStates().then(() => {
@@ -768,7 +787,7 @@
   }) => {
     const articleCount = efficientArticles.length;
     const containerEl = document.createElement("div");
-    let level = Math.min(Math.floor(efficientArticles.length / 2), 5);
+    let level = Math.min(calcMathPower(efficientArticles.length), 5);
     if (level === 5 && dayCount < 14) level--;
     if (level === 4 && dayCount < 7) level--;
     const levelReward = [{
@@ -1116,7 +1135,9 @@
     dayLimit
   }) {
     const startTime = new Date(startTimeStamp);
+    debugLog(signalRegex, articles);
     const efficientArticles = articles.filter(article => {
+      debugLog(article.publishTime > startTime, categories.includes(article.category), article.count >= dayLimit, signalRegex.test(article.content), article.content);
       return article.publishTime > startTime && categories.includes(article.category) && article.count >= dayLimit && signalRegex.test(article.content);
     });
     const publishTimeGroup = [];

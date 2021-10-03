@@ -6,6 +6,7 @@ import {
   inCreatorPage,
   inSelfProfilePage,
   getUserIdFromPathName,
+  debugLog,
 } from "../utils";
 import { tips, star, activityId } from "./static.json";
 import wordCount from "word-count";
@@ -149,7 +150,15 @@ function generateData(
   { startTimeStamp, categories, signalRegex, dayLimit }
 ) {
   const startTime = new Date(startTimeStamp);
+  debugLog(signalRegex, articles);
   const efficientArticles = articles.filter((article) => {
+    debugLog(
+      article.publishTime > startTime,
+      categories.includes(article.category),
+      article.count >= dayLimit,
+      signalRegex.test(article.content),
+      article.content
+    );
     return (
       article.publishTime > startTime &&
       categories.includes(article.category) &&
