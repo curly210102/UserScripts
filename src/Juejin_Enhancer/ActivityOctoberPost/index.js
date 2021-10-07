@@ -238,7 +238,6 @@ function renderActivityStars(articles) {
           lines[1]?.match(urlRegex())?.[0]
         );
 
-      console.log(isFirstLineMatch, isSecondLineMatch);
       return isFirstLineMatch || isSecondLineMatch;
     },
     dayLimit: 800,
