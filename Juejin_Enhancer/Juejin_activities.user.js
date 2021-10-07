@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动小助手
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.7.3
+// @version      0.1.7.4
 // @description  Enhances Juejin activities
 // @description:zh-CN   跟进掘金上线的活动，提供进度追踪、数据统计、操作辅助等功能。
 // @author       curly brackets
@@ -13,9 +13,9 @@
 // @grant        GM_getValue
 // @grant        GM_registerMenuCommand
 // @run-at       document-end
-// @supportURL   https://gitee.com/curlly-brackets/UserScripts/issues
-// @updateURL    https://gitee.com/curlly-brackets/UserScripts/raw/gitee/Juejin_Enhancer/Juejin_activities.user.js
-// @downloadURL  https://gitee.com/curlly-brackets/UserScripts/raw/gitee/Juejin_Enhancer/Juejin_activities.user.js
+// @supportURL   https://github.com/curly210102/UserScripts/issues
+// @updateURL    https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
+// @downloadURL  https://github.com/curly210102/UserScripts/raw/main/Juejin_Enhancer/Juejin_activities.user.js
 // @connect      juejin.cn
 // ==/UserScript==
 
@@ -889,67 +889,67 @@
     efficientArticles,
     totalCount
   }) => {
-    var _efficientArticles$, _efficientArticles$2, _efficientArticles$3;
-
     const isJoined = efficientArticles.length >= 4; // 参与成功，可进入奖项评选
 
     efficientArticles.sort((a, b) => b.view_count - a.view_count);
-    const viewCountUpper100 = efficientArticles.filter(article => article.view_count >= 100);
-    const partitionRewardArticles = viewCountUpper100.filter(article => article.digg_count >= 6 && article.comment_count >= 3); // 阅读 ≧ 100 的文章 ≧ 2 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条
-
-    const isPartitionReward = partitionRewardArticles.length >= 2; // 阅读 ≧ 100 的文章 ≧ 4 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条
-
-    const isPartitionRewardPlus = partitionRewardArticles.length >= 4; // 阅读 ≧ 100 的文章 ≧ 4 篇，所有投稿文章累计阅读 ≧ 2000，点赞 ≧ 40，评论≧ 10
-
-    const isSpreeReward = viewCountUpper100 >= 4 && totalCount.view >= 2000 && totalCount.digg >= 40 && totalCount.comment >= 10;
-    const isIncentiveRewardLevel3 = ((_efficientArticles$ = efficientArticles[0]) === null || _efficientArticles$ === void 0 ? void 0 : _efficientArticles$["view_count"]) >= 3000 && totalCount.view >= 10000 && totalCount.digg >= 200 && totalCount.comment >= 50;
-    const isIncentiveRewardLevel2 = ((_efficientArticles$2 = efficientArticles[0]) === null || _efficientArticles$2 === void 0 ? void 0 : _efficientArticles$2["view_count"]) >= 1500 & totalCount.view >= 5000 && totalCount.digg >= 100 && totalCount.comment >= 25;
-    const isIncentiveRewardLevel1 = ((_efficientArticles$3 = efficientArticles[0]) === null || _efficientArticles$3 === void 0 ? void 0 : _efficientArticles$3["view_count"]) >= 500 & totalCount.view >= 3000 && totalCount.digg >= 60 && totalCount.comment >= 15;
     const containerEl = document.createElement("div");
     const rewardEl = document.createElement("p");
     const rewards = [];
 
     if (isJoined) {
+      var _efficientArticles$, _efficientArticles$2, _efficientArticles$3;
+
       rewards.push({
         icon: img$2
       });
+      const viewCountUpper100 = efficientArticles.filter(article => article.view_count >= 100);
+      const partitionRewardArticles = viewCountUpper100.filter(article => article.digg_count >= 6 && article.comment_count >= 3); // 阅读 ≧ 100 的文章 ≧ 2 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条
+
+      const isPartitionReward = partitionRewardArticles.length >= 2; // 阅读 ≧ 100 的文章 ≧ 4 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条
+
+      const isPartitionRewardPlus = partitionRewardArticles.length >= 4; // 阅读 ≧ 100 的文章 ≧ 4 篇，所有投稿文章累计阅读 ≧ 2000，点赞 ≧ 40，评论≧ 10
+
+      const isSpreeReward = viewCountUpper100 >= 4 && totalCount.view >= 2000 && totalCount.digg >= 40 && totalCount.comment >= 10;
+      const isIncentiveRewardLevel3 = ((_efficientArticles$ = efficientArticles[0]) === null || _efficientArticles$ === void 0 ? void 0 : _efficientArticles$["view_count"]) >= 3000 && totalCount.view >= 10000 && totalCount.digg >= 200 && totalCount.comment >= 50;
+      const isIncentiveRewardLevel2 = ((_efficientArticles$2 = efficientArticles[0]) === null || _efficientArticles$2 === void 0 ? void 0 : _efficientArticles$2["view_count"]) >= 1500 & totalCount.view >= 5000 && totalCount.digg >= 100 && totalCount.comment >= 25;
+      const isIncentiveRewardLevel1 = ((_efficientArticles$3 = efficientArticles[0]) === null || _efficientArticles$3 === void 0 ? void 0 : _efficientArticles$3["view_count"]) >= 500 & totalCount.view >= 3000 && totalCount.digg >= 60 && totalCount.comment >= 15;
+
+      if (isPartitionRewardPlus) {
+        rewards.push({
+          icon: img$6
+        });
+      } else if (isPartitionReward) {
+        rewards.push({
+          icon: img$6
+        });
+      } else {
+        rewards.push({
+          icon: img$1,
+          description: "单篇阅读100+，点赞6+，评论3+ 的文章两篇"
+        });
+      }
+
+      if (isSpreeReward) {
+        rewards.push({
+          icon: img$5
+        });
+      } else {
+        rewards.push({
+          icon: img,
+          description: "阅读100+的文章至少 4 篇，累计阅读2000+，点赞40+，评论10+"
+        });
+      }
+
+      if (isIncentiveRewardLevel1 || isIncentiveRewardLevel2 || isIncentiveRewardLevel3) {
+        rewards.push({
+          icon: img$4,
+          description: "有望获得创作激励金"
+        });
+      }
     } else {
       rewards.push({
         icon: img$3,
         description: "发布 4 篇点亮"
-      });
-    }
-
-    if (isPartitionRewardPlus) {
-      rewards.push({
-        icon: img$6
-      });
-    } else if (isPartitionReward) {
-      rewards.push({
-        icon: img$6
-      });
-    } else {
-      rewards.push({
-        icon: img$1,
-        description: "单篇阅读100+，点赞6+，评论3+ 的文章两篇"
-      });
-    }
-
-    if (isSpreeReward) {
-      rewards.push({
-        icon: img$5
-      });
-    } else {
-      rewards.push({
-        icon: img,
-        description: "阅读100+的文章至少 4 篇，累计阅读2000+，点赞40+，评论10+"
-      });
-    }
-
-    if (isIncentiveRewardLevel1 || isIncentiveRewardLevel2 || isIncentiveRewardLevel3) {
-      rewards.push({
-        icon: img$4,
-        description: "有望获得创作激励金"
       });
     }
 
@@ -2773,10 +2773,10 @@
     const data = generateData(articles, { ...tips,
 
       signalFunction(text) {
-        var _lines$, _lines$$match, _text$match;
+        var _lines$, _lines$$match, _lines$0$match;
 
         const lines = text.split("\n");
-        return ((_lines$ = lines[0]) === null || _lines$ === void 0 ? void 0 : (_lines$$match = _lines$.match(/\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，|！/gu)) === null || _lines$$match === void 0 ? void 0 : _lines$$match.join("")) === "小知识，大挑战！本文正在参与程序员必备小知识创作活动" && ((_text$match = text.match(urlRegex())) === null || _text$match === void 0 ? void 0 : _text$match[0]) === "https://juejin.cn/post/7008476801634680869";
+        return ((_lines$ = lines[0]) === null || _lines$ === void 0 ? void 0 : (_lines$$match = _lines$.match(/\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，|！/gu)) === null || _lines$$match === void 0 ? void 0 : _lines$$match.join("")) === "小知识，大挑战！本文正在参与程序员必备小知识创作活动" && /https:\/\/juejin\.cn\/post\/7008476801634680869(?:\/|$)?/.test((_lines$0$match = lines[0].match(urlRegex())) === null || _lines$0$match === void 0 ? void 0 : _lines$0$match[0]);
       },
 
       dayLimit: 400
@@ -2788,11 +2788,12 @@
     const data = generateData(articles, { ...star,
 
       signalFunction(text) {
-        var _lines$0$match, _lines$1$match;
+        var _lines$2, _lines$2$match, _lines$3, _lines$3$match, _lines$4, _lines$4$match, _lines$5, _lines$5$match;
 
         const lines = text.split("\n");
-        const isFirstLineMatch = lines[0].match(/\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu).join("") === "本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金" && ((_lines$0$match = lines[0].match(urlRegex())) === null || _lines$0$match === void 0 ? void 0 : _lines$0$match[0]) === "https://juejin.cn/post/7012210233804079141";
-        const isSecondLineMatch = ["本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金", "本文同时参与掘力星计划，赢取创作大礼包，挑战创作激励金"].includes(lines[1].match(/\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu).join("")) && ((_lines$1$match = lines[1].match(urlRegex())) === null || _lines$1$match === void 0 ? void 0 : _lines$1$match[0]) === "https://juejin.cn/post/7012210233804079141";
+        const isFirstLineMatch = ((_lines$2 = lines[0]) === null || _lines$2 === void 0 ? void 0 : (_lines$2$match = _lines$2.match(/\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu)) === null || _lines$2$match === void 0 ? void 0 : _lines$2$match.join("")) === "本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金" && /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test((_lines$3 = lines[0]) === null || _lines$3 === void 0 ? void 0 : (_lines$3$match = _lines$3.match(urlRegex())) === null || _lines$3$match === void 0 ? void 0 : _lines$3$match[0]);
+        const isSecondLineMatch = ["本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金", "本文同时参与掘力星计划，赢取创作大礼包，挑战创作激励金"].includes((_lines$4 = lines[1]) === null || _lines$4 === void 0 ? void 0 : (_lines$4$match = _lines$4.match(/\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu)) === null || _lines$4$match === void 0 ? void 0 : _lines$4$match.join("")) && /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test((_lines$5 = lines[1]) === null || _lines$5 === void 0 ? void 0 : (_lines$5$match = _lines$5.match(urlRegex())) === null || _lines$5$match === void 0 ? void 0 : _lines$5$match[0]);
+        console.log(isFirstLineMatch, isSecondLineMatch);
         return isFirstLineMatch || isSecondLineMatch;
       },
 

@@ -197,8 +197,9 @@ function renderActivityTips(articles) {
           )
           ?.join("") ===
           "小知识，大挑战！本文正在参与程序员必备小知识创作活动" &&
-        text.match(urlRegex())?.[0] ===
-          "https://juejin.cn/post/7008476801634680869"
+        /https:\/\/juejin\.cn\/post\/7008476801634680869(?:\/|$)?/.test(
+          lines[0].match(urlRegex())?.[0]
+        )
       );
     },
     dayLimit: 400,
@@ -213,13 +214,14 @@ function renderActivityStars(articles) {
       const lines = text.split("\n");
       const isFirstLineMatch =
         lines[0]
-          .match(
+          ?.match(
             /\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu
           )
-          .join("") ===
+          ?.join("") ===
           "本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金" &&
-        lines[0].match(urlRegex())?.[0] ===
-          "https://juejin.cn/post/7012210233804079141";
+        /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test(
+          lines[0]?.match(urlRegex())?.[0]
+        );
 
       const isSecondLineMatch =
         [
@@ -227,14 +229,16 @@ function renderActivityStars(articles) {
           "本文同时参与掘力星计划，赢取创作大礼包，挑战创作激励金",
         ].includes(
           lines[1]
-            .match(
+            ?.match(
               /\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu
             )
-            .join("")
+            ?.join("")
         ) &&
-        lines[1].match(urlRegex())?.[0] ===
-          "https://juejin.cn/post/7012210233804079141";
+        /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test(
+          lines[1]?.match(urlRegex())?.[0]
+        );
 
+      console.log(isFirstLineMatch, isSecondLineMatch);
       return isFirstLineMatch || isSecondLineMatch;
     },
     dayLimit: 800,

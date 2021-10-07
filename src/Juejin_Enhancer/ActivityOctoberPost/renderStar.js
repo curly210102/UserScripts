@@ -21,42 +21,7 @@ import unspreeIcon from "./badges/unspree.svg";
 // 综合文章评论、点赞、收藏
 export default ({ efficientArticles, totalCount }) => {
   const isJoined = efficientArticles.length >= 4; // 参与成功，可进入奖项评选
-
   efficientArticles.sort((a, b) => b.view_count - a.view_count);
-  const viewCountUpper100 = efficientArticles.filter(
-    (article) => article.view_count >= 100
-  );
-
-  const partitionRewardArticles = viewCountUpper100.filter(
-    (article) => article.digg_count >= 6 && article.comment_count >= 3
-  );
-  // 阅读 ≧ 100 的文章 ≧ 2 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条
-  const isPartitionReward = partitionRewardArticles.length >= 2;
-  // 阅读 ≧ 100 的文章 ≧ 4 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条
-  const isPartitionRewardPlus = partitionRewardArticles.length >= 4;
-  // 阅读 ≧ 100 的文章 ≧ 4 篇，所有投稿文章累计阅读 ≧ 2000，点赞 ≧ 40，评论≧ 10
-  const isSpreeReward =
-    viewCountUpper100 >= 4 &&
-    totalCount.view >= 2000 &&
-    totalCount.digg >= 40 &&
-    totalCount.comment >= 10;
-
-  const isIncentiveRewardLevel3 =
-    efficientArticles[0]?.["view_count"] >= 3000 &&
-    totalCount.view >= 10000 &&
-    totalCount.digg >= 200 &&
-    totalCount.comment >= 50;
-
-  const isIncentiveRewardLevel2 =
-    (efficientArticles[0]?.["view_count"] >= 1500) &
-      (totalCount.view >= 5000) &&
-    totalCount.digg >= 100 &&
-    totalCount.comment >= 25;
-
-  const isIncentiveRewardLevel1 =
-    (efficientArticles[0]?.["view_count"] >= 500) & (totalCount.view >= 3000) &&
-    totalCount.digg >= 60 &&
-    totalCount.comment >= 15;
 
   const containerEl = document.createElement("div");
   const rewardEl = document.createElement("p");
@@ -65,46 +30,81 @@ export default ({ efficientArticles, totalCount }) => {
     rewards.push({
       icon: joinedIcon,
     });
+    const viewCountUpper100 = efficientArticles.filter(
+      (article) => article.view_count >= 100
+    );
+
+    const partitionRewardArticles = viewCountUpper100.filter(
+      (article) => article.digg_count >= 6 && article.comment_count >= 3
+    );
+    // 阅读 ≧ 100 的文章 ≧ 2 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条
+    const isPartitionReward = partitionRewardArticles.length >= 2;
+    // 阅读 ≧ 100 的文章 ≧ 4 篇，每篇文章点赞 ≧ 6 ，评论互动 ≧ 3 条
+    const isPartitionRewardPlus = partitionRewardArticles.length >= 4;
+    // 阅读 ≧ 100 的文章 ≧ 4 篇，所有投稿文章累计阅读 ≧ 2000，点赞 ≧ 40，评论≧ 10
+    const isSpreeReward =
+      viewCountUpper100 >= 4 &&
+      totalCount.view >= 2000 &&
+      totalCount.digg >= 40 &&
+      totalCount.comment >= 10;
+
+    const isIncentiveRewardLevel3 =
+      efficientArticles[0]?.["view_count"] >= 3000 &&
+      totalCount.view >= 10000 &&
+      totalCount.digg >= 200 &&
+      totalCount.comment >= 50;
+
+    const isIncentiveRewardLevel2 =
+      (efficientArticles[0]?.["view_count"] >= 1500) &
+        (totalCount.view >= 5000) &&
+      totalCount.digg >= 100 &&
+      totalCount.comment >= 25;
+
+    const isIncentiveRewardLevel1 =
+      (efficientArticles[0]?.["view_count"] >= 500) &
+        (totalCount.view >= 3000) &&
+      totalCount.digg >= 60 &&
+      totalCount.comment >= 15;
+    if (isPartitionRewardPlus) {
+      rewards.push({
+        icon: partitionPlusIcon,
+      });
+    } else if (isPartitionReward) {
+      rewards.push({
+        icon: partitionIcon,
+      });
+    } else {
+      rewards.push({
+        icon: unpartitionIcon,
+        description: "单篇阅读100+，点赞6+，评论3+ 的文章两篇",
+      });
+    }
+
+    if (isSpreeReward) {
+      rewards.push({
+        icon: spreeIcon,
+      });
+    } else {
+      rewards.push({
+        icon: unspreeIcon,
+        description: "阅读100+的文章至少 4 篇，累计阅读2000+，点赞40+，评论10+",
+      });
+    }
+
+    if (
+      isIncentiveRewardLevel1 ||
+      isIncentiveRewardLevel2 ||
+      isIncentiveRewardLevel3
+    ) {
+      rewards.push({
+        icon: incentiveIcon,
+        description: "有望获得创作激励金",
+      });
+    }
   } else {
     rewards.push({
       icon: unjoinedIcon,
       description: "发布 4 篇点亮",
-    });
-  }
-  if (isPartitionRewardPlus) {
-    rewards.push({
-      icon: partitionPlusIcon,
-    });
-  } else if (isPartitionReward) {
-    rewards.push({
-      icon: partitionIcon,
-    });
-  } else {
-    rewards.push({
-      icon: unpartitionIcon,
-      description: "单篇阅读100+，点赞6+，评论3+ 的文章两篇",
-    });
-  }
-
-  if (isSpreeReward) {
-    rewards.push({
-      icon: spreeIcon,
-    });
-  } else {
-    rewards.push({
-      icon: unspreeIcon,
-      description: "阅读100+的文章至少 4 篇，累计阅读2000+，点赞40+，评论10+",
-    });
-  }
-
-  if (
-    isIncentiveRewardLevel1 ||
-    isIncentiveRewardLevel2 ||
-    isIncentiveRewardLevel3
-  ) {
-    rewards.push({
-      icon: incentiveIcon,
-      description: "有望获得创作激励金",
     });
   }
   rewardEl.innerHTML = `<table style="width:100%">
