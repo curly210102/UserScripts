@@ -7,6 +7,8 @@ import spreeIcon from "./badges/spree.svg";
 import incentiveIcon from "./badges/incentive.svg";
 import unjoinedIcon from "./badges/unjoined.svg";
 import joinedIcon from "./badges/joined.svg";
+import unpartitionIcon from "./badges/unpartition.svg";
+import unspreeIcon from "./badges/unspree.svg";
 
 // 2 篇：青铜
 // 4 篇 白银
@@ -77,11 +79,21 @@ export default ({ efficientArticles, totalCount }) => {
     rewards.push({
       icon: partitionIcon,
     });
+  } else {
+    rewards.push({
+      icon: unpartitionIcon,
+      description: "单篇阅读100+，点赞6+，评论3+ 的文章两篇",
+    });
   }
 
   if (isSpreeReward) {
     rewards.push({
       icon: spreeIcon,
+    });
+  } else {
+    rewards.push({
+      icon: unspreeIcon,
+      description: "阅读100+的文章至少 4 篇，累计阅读2000+，点赞40+，评论10+",
     });
   }
 
@@ -102,12 +114,12 @@ export default ({ efficientArticles, totalCount }) => {
       ({ icon, description }) =>
         `<div><img style="height:24px" src="${icon}" />${
           description
-            ? `<div style="font-size:10px;margin-top:4px;color:#939aa3a3;margin-left: 1em;">${description}</div>`
+            ? `<div style="font-size:10px;margin-top:4px;color:#939aa3a3;margin-left: 1em;margin-bottom:1em">${description}</div>`
             : ""
         }</div>`
     )
     .join("")}</td>
-    <td style="font-weight:bold;font-size:16px;color:#939aa3;text-align:right">
+    <td style="font-weight:bold;font-size:16px;color:#939aa3;text-align:right;width:3em;vertical-align:top">
       ${efficientArticles.length} 篇
     </td>
   </tr>
@@ -133,6 +145,42 @@ export default ({ efficientArticles, totalCount }) => {
     .join("")}
   `;
   containerEl.appendChild(countEl);
+
+  const readAmountEl = document.createElement("p");
+  const readAmountLevels = [0, 20, 40, 60, 80, 100, 500, 1500, 3000];
+  const amountLevelSize = readAmountLevels.length;
+  const readLevelCounts = new Array(amountLevelSize).fill(0);
+  efficientArticles.forEach(({ view_count }) => {
+    if (view_count >= 3000) {
+      readLevelCounts[amountLevelSize - 1]++;
+    } else if (view_count >= 1500) {
+      readLevelCounts[amountLevelSize - 2]++;
+    } else if (view_count >= 500) {
+      readLevelCounts[amountLevelSize - 3]++;
+    } else {
+      readLevelCounts[Math.floor(Math.min(100, view_count) / 20)]++;
+    }
+  });
+
+  let endIndex = amountLevelSize - 1;
+  let startIndex = 0;
+  while (readLevelCounts[endIndex] === 0) {
+    endIndex--;
+  }
+  while (readLevelCounts[startIndex] === 0) {
+    startIndex++;
+  }
+  const maxReadLevelCount = Math.max(...readLevelCounts);
+  let readElHTML = "";
+  for (let i = endIndex; i >= startIndex; i--) {
+    const level = readAmountLevels[i];
+    const count = readLevelCounts[i];
+    readElHTML += `<label for="count" style="text-align:right">${level}+</label><progress id="count" max="${maxReadLevelCount}" value="${count}">${count}篇</progress><span>${count}篇</span>`;
+  }
+  readAmountEl.style =
+    "display: grid;grid-template-columns: auto max-content auto;grid-gap: 10px;color:#939aa3a3";
+  readAmountEl.innerHTML = readElHTML;
+  containerEl.appendChild(readAmountEl);
 
   profileStateRender.add({
     id: "activity_star_post",

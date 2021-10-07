@@ -14,6 +14,7 @@ import renderTipState from "./renderTips";
 import renderStarState from "./renderStar";
 import { isDebugEnable } from "../userConfigs";
 import nm from "nomatter";
+import urlRegex from "url-regex";
 
 const articleContentMap = new Map(
   Object.entries(getFromStorage(`${activityId}/article_contents`) ?? [])
@@ -147,23 +148,15 @@ async function fetchArticles(userId) {
 
 function generateData(
   articles,
-  { startTimeStamp, categories, signalRegex, dayLimit }
+  { startTimeStamp, categories, signalFunction, dayLimit }
 ) {
   const startTime = new Date(startTimeStamp);
-  debugLog(signalRegex, articles);
   const efficientArticles = articles.filter((article) => {
-    debugLog(
-      article.publishTime > startTime,
-      categories.includes(article.category),
-      article.count >= dayLimit,
-      signalRegex.test(article.content),
-      article.content
-    );
     return (
       article.publishTime > startTime &&
       categories.includes(article.category) &&
       article.count >= dayLimit &&
-      signalRegex.test(article.content)
+      signalFunction(article.content)
     );
   });
   const publishTimeGroup = [];
@@ -195,8 +188,19 @@ function generateData(
 function renderActivityTips(articles) {
   const data = generateData(articles, {
     ...tips,
-    signalRegex:
-      /小知识，大挑战！本文正在参与“\[程序员必备小知识\]\(https:\/\/juejin\.cn\/post\/7008476801634680869(?:\b[^)]+)?\)”创作活动/,
+    signalFunction(text) {
+      const lines = text.split("\n");
+      return (
+        lines[0]
+          ?.match(
+            /\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，|！/gu
+          )
+          ?.join("") ===
+          "小知识，大挑战！本文正在参与程序员必备小知识创作活动" &&
+        text.match(urlRegex())?.[0] ===
+          "https://juejin.cn/post/7008476801634680869"
+      );
+    },
     dayLimit: 400,
   });
   renderTipState(data);
@@ -205,8 +209,34 @@ function renderActivityTips(articles) {
 function renderActivityStars(articles) {
   const data = generateData(articles, {
     ...star,
-    signalRegex:
-      /本文(已|同时)参与「\[掘力星计划\]\(https:\/\/juejin\.cn\/post\/7012210233804079141(?:\b[^)]+)?\)」，赢取创作大礼包，挑战创作激励金/,
+    signalFunction(text) {
+      const lines = text.split("\n");
+      const isFirstLineMatch =
+        lines[0]
+          .match(
+            /\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu
+          )
+          .join("") ===
+          "本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金" &&
+        lines[0].match(urlRegex())?.[0] ===
+          "https://juejin.cn/post/7012210233804079141";
+
+      const isSecondLineMatch =
+        [
+          "本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金",
+          "本文同时参与掘力星计划，赢取创作大礼包，挑战创作激励金",
+        ].includes(
+          lines[1]
+            .match(
+              /\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu
+            )
+            .join("")
+        ) &&
+        lines[1].match(urlRegex())?.[0] ===
+          "https://juejin.cn/post/7012210233804079141";
+
+      return isFirstLineMatch || isSecondLineMatch;
+    },
     dayLimit: 800,
   });
   renderStarState(data);
