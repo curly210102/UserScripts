@@ -2793,7 +2793,6 @@
         const lines = text.split("\n");
         const isFirstLineMatch = ((_lines$2 = lines[0]) === null || _lines$2 === void 0 ? void 0 : (_lines$2$match = _lines$2.match(/\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu)) === null || _lines$2$match === void 0 ? void 0 : _lines$2$match.join("")) === "本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金" && /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test((_lines$3 = lines[0]) === null || _lines$3 === void 0 ? void 0 : (_lines$3$match = _lines$3.match(urlRegex())) === null || _lines$3$match === void 0 ? void 0 : _lines$3$match[0]);
         const isSecondLineMatch = ["本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金", "本文同时参与掘力星计划，赢取创作大礼包，挑战创作激励金"].includes((_lines$4 = lines[1]) === null || _lines$4 === void 0 ? void 0 : (_lines$4$match = _lines$4.match(/\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu)) === null || _lines$4$match === void 0 ? void 0 : _lines$4$match.join("")) && /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test((_lines$5 = lines[1]) === null || _lines$5 === void 0 ? void 0 : (_lines$5$match = _lines$5.match(urlRegex())) === null || _lines$5$match === void 0 ? void 0 : _lines$5$match[0]);
-        console.log(isFirstLineMatch, isSecondLineMatch);
         return isFirstLineMatch || isSecondLineMatch;
       },
 
