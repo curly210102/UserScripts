@@ -1114,7 +1114,7 @@
   var nomatter_1 = nomatter;
 
   const articleStoragePath = `${activityId}/article_contents`;
-  const articleContentMap = new Map(Object.entries(initStorage(articleStoragePath, 2, [])));
+  const articleContentMap = new Map(Object.entries(initStorage(articleStoragePath, 1, [])));
 
   async function fetchArticleList(requestData = {}) {
     return await request();
