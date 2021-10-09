@@ -61,9 +61,18 @@ export default ({ efficientArticles, dayCount, totalCount }) => {
     },
   ];
 
-  const nextLevel = levelReward[level + 1];
   const reward = levelReward[level];
   const rewardEl = document.createElement("p");
+  const nextLevel = levelReward[level + 1];
+  const nextLevelHTML = nextLevel
+    ? `<tr style="color:#939aa3a3">
+  <td style="text-align:left">${
+    nextLevel ? `下一等级：${nextLevel.title}` : ""
+  }</td>
+    <td>${nextLevel ? `${nextLevel.count} 篇` : ""}</td>
+    <td>${nextLevel.days ? `${nextLevel.days} 天` : "无限制"}</td>
+  </tr>`
+    : "";
   rewardEl.innerHTML = `
   <table style="width:100%;text-align:center;">
   <tr>
@@ -77,13 +86,7 @@ export default ({ efficientArticles, dayCount, totalCount }) => {
       ${dayCount} 天
     </td>
   </tr>
-  <tr style="color:#939aa3a3">
-  <td style="text-align:left">${
-    nextLevel ? `下一等级：${nextLevel.title}` : ""
-  }</td>
-    <td>${nextLevel ? `${nextLevel.count} 篇` : ""}</td>
-    <td>${nextLevel.days ? `${nextLevel.days} 天` : "无限制"}</td>
-  </tr>
+  ${nextLevelHTML}
 </table>
 <p style="display:flex;align-items:center;color:#939aa3a3;justify-content:space-between"><img style="width: 80px" src="${
     articleCount < 8 ? unluckyIcon : luckyIcon
