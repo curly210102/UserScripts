@@ -52,9 +52,6 @@
   const inSelfProfilePage = pathname => {
     return new RegExp(`^\\/user\\/${getUserId()}(?:\\/|$)`).test(pathname);
   };
-  const inProfilePage = pathname => {
-    return /\/user\/(\d+)(?:\/|$)/.test(pathname);
-  };
   const getUserIdFromPathName = pathname => {
     var _pathname$match;
 
@@ -638,19 +635,6 @@
         }, 1000);
       });
       return;
-    }
-
-    if (inProfilePage(currentRouterPathname)) {
-      const prevUserId = getUserIdFromPathName(prevRouterPathname);
-      const currentUserId = getUserIdFromPathName(currentRouterPathname);
-
-      if (currentUserId !== prevUserId) {
-        fetchStates(currentUserId).then(topicStats => {
-          setTimeout(() => {
-            renderProfilePage(topicStats);
-          }, 1000);
-        });
-      }
     }
   }
 
@@ -1316,14 +1300,7 @@
   function onRouteChange$1(prevRouterPathname, currentRouterPathname) {
     if (!inSelfProfilePage(prevRouterPathname) && inSelfProfilePage(currentRouterPathname)) {
       renderPage();
-    } else if (!inCreatorPage(prevRouterPathname) && inCreatorPage(currentRouterPathname)) ; else if (inProfilePage(currentRouterPathname)) {
-      const prevUserId = getUserIdFromPathName(prevRouterPathname);
-      const currentUserId = getUserIdFromPathName(currentRouterPathname);
-
-      if (currentUserId !== prevUserId) {
-        renderPage(currentUserId);
-      }
-    }
+    } else if (!inCreatorPage(prevRouterPathname) && inCreatorPage(currentRouterPathname)) ; else ;
   }
 
   var OctoberPost = {
