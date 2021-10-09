@@ -1,5 +1,3 @@
-# UserScripts
-
 一些自制的油猴脚本
 
 ## Juejin Activities Enhancer (掘金活动辅助工具)

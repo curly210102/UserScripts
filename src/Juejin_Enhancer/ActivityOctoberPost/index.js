@@ -1,12 +1,11 @@
 import {
   fetchData,
   inProfilePage,
-  getFromStorage,
+  initStorage,
   saveToStorage,
   inCreatorPage,
   inSelfProfilePage,
   getUserIdFromPathName,
-  debugLog,
 } from "../utils";
 import { tips, star, activityId } from "./static.json";
 import wordCount from "word-count";
@@ -14,10 +13,10 @@ import renderTipState from "./renderTips";
 import renderStarState from "./renderStar";
 import { isDebugEnable } from "../userConfigs";
 import nm from "nomatter";
-import urlRegex from "url-regex";
 
+const articleStoragePath = `${activityId}/article_contents`;
 const articleContentMap = new Map(
-  Object.entries(getFromStorage(`${activityId}/article_contents`) ?? [])
+  Object.entries(initStorage(articleStoragePath, 1, []))
 );
 
 async function fetchArticleList(requestData = {}) {
@@ -102,11 +101,11 @@ async function fetchArticles(userId) {
   );
   const articleDetails = await Promise.all(
     articleList
-      .filter(({ articleId, modifiedTime }) => {
+      .filter(({ id, modifiedTime }) => {
         return (
-          !articleContentMap.has(articleId) ||
-          new Date(articleContentMap.get(articleId)["modifiedTimeStamp"]) !==
-            modifiedTime
+          !articleContentMap.has(id) ||
+          articleContentMap.get(id)["modifiedTimeStamp"] !==
+            modifiedTime.valueOf()
         );
       })
       .map((article) => {
@@ -121,26 +120,31 @@ async function fetchArticles(userId) {
   articleDetails.forEach(({ data }) => {
     const { article_info } = data;
     const { article_id, mark_content, mtime } = article_info;
-
-    const content = nm(mark_content).split(/\n+/).slice(0, 2).join("\n").trim();
-
+    const content = nm(mark_content).trim();
     articleContentMap.set(article_id, {
-      content,
+      isFitTips:
+        content.includes("程序员必备小知识") &&
+        /https:\/\/juejin\.cn\/post\/7008476801634680869(?:\/|$)?/.test(
+          content
+        ),
+      isFitStar:
+        content.includes("掘力星计划") &&
+        /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test(
+          content
+        ),
       count: wordCount(mark_content),
       modifiedTimeStamp: mtime * 1000,
     });
   });
 
-  saveToStorage(
-    `${activityId}/article_contents`,
-    Object.fromEntries(articleContentMap)
-  );
+  saveToStorage(articleStoragePath, Object.fromEntries(articleContentMap));
 
   return articleList.map((article) => {
     const contentInfo = articleContentMap.get(article.id);
     return {
       ...article,
-      content: contentInfo?.content ?? "",
+      isFitTips: contentInfo?.isFitTips ?? false,
+      isFitStar: contentInfo?.isFitStar ?? false,
       count: contentInfo?.count ?? "",
     };
   });
@@ -156,7 +160,7 @@ function generateData(
       article.publishTime > startTime &&
       categories.includes(article.category) &&
       article.count >= dayLimit &&
-      signalFunction(article.content)
+      signalFunction(article)
     );
   });
   const publishTimeGroup = [];
@@ -188,19 +192,8 @@ function generateData(
 function renderActivityTips(articles) {
   const data = generateData(articles, {
     ...tips,
-    signalFunction(text) {
-      const lines = text.split("\n");
-      return (
-        lines[0]
-          ?.match(
-            /\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，|！/gu
-          )
-          ?.join("") ===
-          "小知识，大挑战！本文正在参与程序员必备小知识创作活动" &&
-        /https:\/\/juejin\.cn\/post\/7008476801634680869(?:\/|$)?/.test(
-          lines[0].match(urlRegex())?.[0]
-        )
-      );
+    signalFunction({ isFitTips }) {
+      return isFitTips;
     },
     dayLimit: 400,
   });
@@ -210,35 +203,8 @@ function renderActivityTips(articles) {
 function renderActivityStars(articles) {
   const data = generateData(articles, {
     ...star,
-    signalFunction(text) {
-      const lines = text.split("\n");
-      const isFirstLineMatch =
-        lines[0]
-          ?.match(
-            /\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu
-          )
-          ?.join("") ===
-          "本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金" &&
-        /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test(
-          lines[0]?.match(urlRegex())?.[0]
-        );
-
-      const isSecondLineMatch =
-        [
-          "本文已参与掘力星计划，赢取创作大礼包，挑战创作激励金",
-          "本文同时参与掘力星计划，赢取创作大礼包，挑战创作激励金",
-        ].includes(
-          lines[1]
-            ?.match(
-              /\p{Script=Han}|\p{Script=Kana}|\p{Script=Hira}|\p{Script=Hangul}|，/gu
-            )
-            ?.join("")
-        ) &&
-        /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test(
-          lines[1]?.match(urlRegex())?.[0]
-        );
-
-      return isFirstLineMatch || isSecondLineMatch;
+    signalFunction({ isFitStar }) {
+      return isFitStar;
     },
     dayLimit: 800,
   });

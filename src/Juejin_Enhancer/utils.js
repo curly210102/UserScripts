@@ -38,12 +38,23 @@ export const debugLog = (...args) => {
   }
 };
 
+export const initStorage = (name, version, defaultValue) => {
+  const versionPath = `${name}/version`;
+  if (getFromStorage(versionPath, 0) < version) {
+    saveToStorage(name, defaultValue);
+    saveToStorage(versionPath, version);
+    return defaultValue;
+  } else {
+    return getFromStorage(name) ?? defaultValue;
+  }
+};
+
 export const saveToStorage = (name, value) => {
   GM_setValue(`${scriptId}/${name}`, value);
 };
 
 export const getFromStorage = (name, defaultValue) => {
-  GM_getValue(`${scriptId}/${name}`, defaultValue);
+  return GM_getValue(`${scriptId}/${name}`, defaultValue);
 };
 
 export const formatDate = (dateInstance, format) => {
