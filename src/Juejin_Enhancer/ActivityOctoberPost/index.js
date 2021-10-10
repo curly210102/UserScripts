@@ -166,8 +166,8 @@ function generateData(
   const publishTimeGroup = [];
   const totalCount = {
     view: 0,
-    comment: 0,
     digg: 0,
+    comment: 0,
     collect: 0,
   };
   efficientArticles.forEach(
