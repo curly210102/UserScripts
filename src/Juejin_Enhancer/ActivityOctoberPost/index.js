@@ -8,7 +8,7 @@ import {
   getUserIdFromPathName,
 } from "../utils";
 import { tips, star, activityId } from "./static.json";
-import wordCount from "word-count";
+import { countWords } from "@homegrown/word-counter";
 import renderTipState from "./renderTips";
 import renderStarState from "./renderStar";
 import { isDebugEnable } from "../userConfigs";
@@ -132,7 +132,7 @@ async function fetchArticles(userId) {
         /https:\/\/juejin\.cn\/post\/7012210233804079141(?:\/|$)?/.test(
           content
         ),
-      count: wordCount(mark_content),
+      count: countWords(mark_content),
       modifiedTimeStamp: mtime * 1000,
     });
   });
