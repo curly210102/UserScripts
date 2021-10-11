@@ -35,15 +35,14 @@
     "eslint-plugin-prettier": "^4.0.0",
     "husky": "^7.0.0",
     "lint-staged": "^11.1.2",
-    "nomatter": "^0.1.0",
     "prettier": "2.4.1",
-    "rollup": "^2.57.0",
-    "url-regex": "^5.0.0",
-    "word-count": "^0.2.2"
+    "rollup": "^2.57.0"
   },
   "browserslist": "chrome >= 31, edge >= 20, safari >= 6, firefox >= 52, opera >= 15 and > 0.2%",
   "dependencies": {
-    "core-js": "^3.17.3"
+    "@homegrown/word-counter": "^0.1.3",
+    "core-js": "^3.17.3",
+    "nomatter": "^0.1.0"
   },
   "lint-staged": {
     "src/**/*.js": "eslint --fix"

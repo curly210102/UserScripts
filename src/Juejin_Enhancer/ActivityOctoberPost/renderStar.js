@@ -33,8 +33,8 @@ export default ({ efficientArticles: activityArticles, totalCount }) => {
     const totalCount = {
       view: 0,
       digg: 0,
-      collect: 0,
       comment: 0,
+      collect: 0,
     };
     efficientArticles.forEach(
       ({ view_count, digg_count, comment_count, collect_count }) => {
@@ -67,7 +67,7 @@ export default ({ efficientArticles: activityArticles, totalCount }) => {
     const isPartitionRewardPlus = partitionRewardArticles.length >= 4;
     // 阅读 ≧ 100 的文章 ≧ 4 篇，所有投稿文章累计阅读 ≧ 2000，点赞 ≧ 40，评论≧ 10
     const isSpreeReward =
-      viewCountUpper100 >= 4 &&
+      viewCountUpper100.length >= 4 &&
       efficientArticlesTotalCount.view >= 2000 &&
       efficientArticlesTotalCount.digg >= 40 &&
       efficientArticlesTotalCount.comment >= 10;
@@ -83,7 +83,7 @@ export default ({ efficientArticles: activityArticles, totalCount }) => {
     } else {
       rewards.push({
         icon: unpartitionIcon,
-        description: "单篇阅读100+，点赞6+，评论3+ 的文章两篇",
+        description: "单篇阅读 100+，点赞 6+，评论 3+ 的文章两篇",
       });
     }
 
@@ -94,7 +94,8 @@ export default ({ efficientArticles: activityArticles, totalCount }) => {
     } else {
       rewards.push({
         icon: unspreeIcon,
-        description: "阅读100+的文章至少 4 篇，累计阅读2000+，点赞40+，评论10+",
+        description:
+          "阅读 100+ 的文章至少 4 篇，累计阅读 2000+，点赞 40+，评论 10+",
       });
     }
   } else {
