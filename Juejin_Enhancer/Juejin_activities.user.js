@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动小助手
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.7.6
+// @version      0.1.7.7
 // @description  Enhances Juejin activities
 // @description:zh-CN   跟进掘金上线的活动，提供进度追踪、数据统计、操作辅助等功能。
 // @author       curly brackets
@@ -33,6 +33,7 @@
   var scriptId$1 = "juejin-activies-enhancer/break-the-circle";
   var startTimeStamp = 1632326400000;
   var endTimeStamp = 1633017599999;
+  var offShelfTime = 1634184000000;
 
   const states$1 = {
     userId: ""
@@ -258,7 +259,7 @@
     let topicStats;
 
     if (isOwner) {
-      if (getCheckPoint() > endTimeStamp) {
+      if (getCheckPoint() > 1633948801188) {
         return new Promise(resolve => {
           setTimeout(() => {
             resolve(getTopicStates());
@@ -314,7 +315,8 @@
             dailyTopics[day].push({
               title: topic.title,
               // wait: 0, pass: 1, fail: 2
-              verified: msg_Info.verify_status === 0 ? 0 : msg_Info.audit_status === 2 && msg_Info.verify_status === 1 ? 1 : 2
+              verified: msg_Info.verify_status === 0 ? 0 : msg_Info.audit_status === 2 && msg_Info.verify_status === 1 ? 1 : 2,
+              publishTime
             });
           }
 
@@ -340,6 +342,7 @@
     const todayIndex = Math.floor((new Date().valueOf() - startTimeStamp) / 86400000);
     const todayEfficientTopicTitles = [];
     let efficientDays = 0;
+    const trueDailyTopics = [];
     dailyTopics.forEach((topics, index) => {
       // 获取一天破解的圈子
       const dailyEfficientTopicTitles = new Set(topics.filter(({
@@ -357,12 +360,17 @@
       }) => {
         // 破圈：未被破解 + 已通过审核或正在等待审核
         return !allEfficientTopicTitles.has(title) && verified === 1;
-      })); // 更新达标天数
+      }).sort((a1, a2) => a1.publishTime - a2.publishTime).map(({
+        title
+      }) => title)); // 更新达标天数
 
       if (dailyVerifiedTopicTitles.size >= 3) {
         efficientDays++;
-      } // 记录今日破圈数据
+      }
 
+      trueDailyTopics.push([...dailyVerifiedTopicTitles].map(title => {
+        return topics.find(topic => topic.title === title);
+      })); // 记录今日破圈数据
 
       if (index === todayIndex) {
         todayEfficientTopicTitles.push(...dailyEfficientTopicTitles);
@@ -388,6 +396,24 @@
         }
       });
     });
+    console.table(dailyTopics.map(topics => {
+      return topics.sort((a1, a2) => a1.publishTime - a2.publishTime).map(({
+        title,
+        publishTime
+      }) => title + " " + new Date(publishTime).toLocaleString("zh-CN", {
+        hour12: false,
+        timeZone: "Asia/Shanghai"
+      }));
+    }));
+    console.table(trueDailyTopics.map(topics => {
+      return topics.sort((a1, a2) => a1.publishTime - a2.publishTime).map(({
+        title,
+        publishTime
+      }) => title + " " + new Date(publishTime).toLocaleString("zh-CN", {
+        hour12: false,
+        timeZone: "Asia/Shanghai"
+      }));
+    }));
     return {
       todayEfficientTopicTitles,
       efficientDays,
@@ -680,7 +706,8 @@
 
   var BreakTheCycle = {
     onRouteChange: onRouteChange$2,
-    onLoaded: initPopupMutation
+    onLoaded: initPopupMutation,
+    isOffShelf: new Date().valueOf() > offShelfTime
   };
 
   var tips = {
@@ -1317,8 +1344,10 @@
 
   async function renderPage(userId) {
     const articles = await fetchArticles(userId);
-    renderActivityTips(articles);
-    renderActivityStars(articles);
+    setTimeout(() => {
+      renderActivityTips(articles);
+      renderActivityStars(articles);
+    });
   }
 
   function onRouteChange$1(prevRouterPathname, currentRouterPathname) {
@@ -1331,7 +1360,9 @@
     onRouteChange: onRouteChange$1
   };
 
-  const activities = [BreakTheCycle, OctoberPost];
+  const activities = [BreakTheCycle, OctoberPost].filter(({
+    isOffShelf
+  }) => !isOffShelf);
   let currentRouterPathname = "";
 
   function updateUserId() {

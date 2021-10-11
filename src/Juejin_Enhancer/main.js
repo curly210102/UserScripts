@@ -3,7 +3,9 @@ import OctoberPost from "./ActivityOctoberPost";
 import { setUserId } from "./globalStates";
 import { getUserIdFromPathName } from "./utils";
 
-const activities = [BreakTheCycle, OctoberPost];
+const activities = [BreakTheCycle, OctoberPost].filter(
+  ({ isOffShelf }) => !isOffShelf
+);
 
 let currentRouterPathname = "";
 

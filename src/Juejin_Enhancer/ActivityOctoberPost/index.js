@@ -213,8 +213,10 @@ function renderActivityStars(articles) {
 
 async function renderPage(userId) {
   const articles = await fetchArticles(userId);
-  renderActivityTips(articles);
-  renderActivityStars(articles);
+  setTimeout(() => {
+    renderActivityTips(articles);
+    renderActivityStars(articles);
+  });
 }
 
 function onRouteChange(prevRouterPathname, currentRouterPathname) {

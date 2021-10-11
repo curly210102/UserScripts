@@ -1,6 +1,7 @@
 import { renderPinPage, renderProfilePage } from "./renderStats";
 import { renderTopicSelectMenu } from "./renderMenuSelect";
 import { fetchStates } from "./states";
+import { offShelfTime } from "./static.json";
 import {
   getUserIdFromPathName,
   inPinPage,
@@ -81,4 +82,5 @@ function initPopupMutation() {
 export default {
   onRouteChange,
   onLoaded: initPopupMutation,
+  isOffShelf: new Date().valueOf() > offShelfTime,
 };

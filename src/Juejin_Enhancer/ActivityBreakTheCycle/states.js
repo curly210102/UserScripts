@@ -34,7 +34,7 @@ export async function fetchStates(userId) {
   let topicStats;
 
   if (isOwner) {
-    if (getCheckPoint() > endTimeStamp) {
+    if (getCheckPoint() > 1633948801188) {
       return new Promise((resolve) => {
         setTimeout(() => {
           resolve(getTopicStates());
@@ -93,6 +93,7 @@ function requestShortMsgTopic(
                 : msg_Info.audit_status === 2 && msg_Info.verify_status === 1
                 ? 1
                 : 2,
+            publishTime,
           });
         }
         lastPublishTime = publishTime;
@@ -118,6 +119,9 @@ function generateTopicStats(dailyTopics) {
   );
   const todayEfficientTopicTitles = [];
   let efficientDays = 0;
+
+  const trueDailyTopics = [];
+
   dailyTopics.forEach((topics, index) => {
     // 获取一天破解的圈子
     const dailyEfficientTopicTitles = new Set(
@@ -129,16 +133,25 @@ function generateTopicStats(dailyTopics) {
         .map(({ title }) => title)
     );
     const dailyVerifiedTopicTitles = new Set(
-      topics.filter(({ title, verified }) => {
-        // 破圈：未被破解 + 已通过审核或正在等待审核
-        return !allEfficientTopicTitles.has(title) && verified === 1;
-      })
+      topics
+        .filter(({ title, verified }) => {
+          // 破圈：未被破解 + 已通过审核或正在等待审核
+          return !allEfficientTopicTitles.has(title) && verified === 1;
+        })
+        .sort((a1, a2) => a1.publishTime - a2.publishTime)
+        .map(({ title }) => title)
     );
 
     // 更新达标天数
     if (dailyVerifiedTopicTitles.size >= 3) {
       efficientDays++;
     }
+
+    trueDailyTopics.push(
+      [...dailyVerifiedTopicTitles].map((title) => {
+        return topics.find((topic) => topic.title === title);
+      })
+    );
     // 记录今日破圈数据
     if (index === todayIndex) {
       todayEfficientTopicTitles.push(...dailyEfficientTopicTitles);
@@ -158,6 +171,38 @@ function generateTopicStats(dailyTopics) {
       }
     });
   });
+
+  console.table(
+    dailyTopics.map((topics) => {
+      return topics
+        .sort((a1, a2) => a1.publishTime - a2.publishTime)
+        .map(
+          ({ title, publishTime }) =>
+            title +
+            " " +
+            new Date(publishTime).toLocaleString("zh-CN", {
+              hour12: false,
+              timeZone: "Asia/Shanghai",
+            })
+        );
+    })
+  );
+
+  console.table(
+    trueDailyTopics.map((topics) => {
+      return topics
+        .sort((a1, a2) => a1.publishTime - a2.publishTime)
+        .map(
+          ({ title, publishTime }) =>
+            title +
+            " " +
+            new Date(publishTime).toLocaleString("zh-CN", {
+              hour12: false,
+              timeZone: "Asia/Shanghai",
+            })
+        );
+    })
+  );
 
   return {
     todayEfficientTopicTitles,

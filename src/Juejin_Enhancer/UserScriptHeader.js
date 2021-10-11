@@ -2,7 +2,7 @@
 // @name         Juejin Activities Enhancer
 // @name:zh-CN   掘金活动小助手
 // @namespace    https://github.com/curly210102/UserScripts
-// @version      0.1.7.6
+// @version      0.1.7.7
 // @description  Enhances Juejin activities
 // @description:zh-CN   跟进掘金上线的活动，提供进度追踪、数据统计、操作辅助等功能。
 // @author       curly brackets
